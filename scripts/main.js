@@ -30,6 +30,9 @@ const CFG = {
   octopusThrowSelfHit: 150, // 章鱼每扔一次自扣（需求指定 150）
   jesterRotateSelfHitPerSec: 20, // 弄臣旋转时每秒掉血
   pixelZombieSelfHitPerSec: 10, // 6. 像素僵尸每秒自扣（无视防具）
+  kingGuardianImpType: 12, // 10. 拦截国王用的「隐形小鬼」类型（ZombieEnum.imp = 12）
+  kingGuardianSpawnStyle: 0, // 10. 生成风格（LnCSpawnZombieStyleEnum.appear = 0）
+  kingGuardianOpacity: 0.35, // 10. 隐形程度（0 = 全透明，1 = 正常）
   selfKillDamage: 999999, // 「自杀」用的致死伤害
 }
 
@@ -70,13 +73,15 @@ const TARGETS = [
   // ── 7. 冰河小鬼 / 冰鼬：完全免疫冰系控制 ──
   { key: 'iceImmune', label: '冰河小鬼/冰鼬·免疫冰冻', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setFreeze'], mode: 'iceImmune' },
   { key: 'iceImmune', label: '冰河小鬼/冰鼬·免疫减速', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setChill'], mode: 'iceImmune' },
+  // ── 10. 国王：出场期间生成「隐形小鬼」，打死它即可拦截国王 ──
+  { key: 'kingIntercept', label: '国王·可被拦截', names: ['DarkKingZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['onLaneSpawnSettled'], mode: 'kingIntercept' },
 ]
 
 /* ────────────────────── 基础设施 ────────────────────── */
 const diagLines = []
 const notedOnce = new Set()
 const resolved = new Map()
-const stats = { jamThrows: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
+const stats = { jamThrows: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, kingGuards: 0, kingIntercepts: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
 
 let activeCtx = null
 
@@ -355,6 +360,103 @@ function handlerIceImmune(entry, thisArg, args, callNext) {
   return callNext(...args)
 }
 
+/**
+ * 10. 国王可被拦截。
+ *
+ * 需求：出场动画期间生成一个「隐形小鬼」，把它打死就直接拦截还没降临的国王。
+ *
+ * 引擎依据：
+ *   · `DarkKingZombie.onLaneSpawnSettled()` 里播放 `"Spawn"` 动画 —— 这就是「降临」过程。
+ *   · `DarkKingZombie.playSpecialGridZombieDieForced()` 是现成的强制终结入口（拦截用）。
+ *   · 生成僵尸走 `inLnC.SpawnZombie(zombieEnum, styleEnum)`（引擎里 `bowlingInfiNut`
+ *     就是这么生成护盾的），另有 `SpawnZombieByZombieType(type, style, ...)` 的写法。
+ */
+function handlerKingIntercept(entry, thisArg, args, callNext) {
+  const r = callNext(...args)
+  try {
+    if (thisArg && !thisArg.__zfaKingGuarded) {
+      thisArg.__zfaKingGuarded = true
+      summonKingGuardian(thisArg)
+    }
+  } catch (err) {
+    noteOnce('kingintercept', '国王拦截：在场标记写入失败 ' + errText(err))
+  }
+  return r
+}
+
+/** 生成守护小鬼并挂上死亡回调；生成是异步的，失败一律降级为「不拦截」 */
+function summonKingGuardian(king) {
+  try {
+    const lnc = king.inLnC
+    if (!lnc || typeof lnc.SpawnZombie !== 'function') {
+      noteOnce('kingnolane', '国王拦截：拿不到 inLnC.SpawnZombie，本条不生效')
+      return
+    }
+    Promise.resolve(
+      lnc.SpawnZombie(CFG.kingGuardianImpType, CFG.kingGuardianSpawnStyle)
+    ).then((list) => {
+      const imp = list && list[0]
+      if (!imp) { noteOnce('kingnoimp', '国王拦截：守护小鬼没有生成出来'); return }
+      imp.__zfaKingGuardianFor = king
+      king.__zfaKingGuardian = imp
+      applyGhostLook(imp)
+      installGuardianDeathHook(imp)
+      stats.kingGuards += 1
+      logLine(null, `国王拦截：已生成守护小鬼（类型 ${CFG.kingGuardianImpType}，透明度 ${CFG.kingGuardianOpacity}）`)
+    }).catch((err) => {
+      noteOnce('kingguardfail', '国王拦截：小鬼生成失败 ' + errText(err))
+    })
+  } catch (err) {
+    noteOnce('kingguard', '国王拦截：生成流程异常 ' + errText(err))
+  }
+}
+
+/** 「隐形」只降透明度 —— 保留可见性与碰撞判定，否则玩家就打不到它了 */
+function applyGhostLook(imp) {
+  try {
+    const a = Math.round(255 * CFG.kingGuardianOpacity)
+    if (imp.node) imp.node.opacity = a
+    if (imp.body && imp.body.node) imp.body.node.opacity = a
+  } catch (err) { /* 拿不到节点就保持原样 */ }
+}
+
+/** 覆盖实例的死亡入口：小鬼一死就终结国王 */
+function installGuardianDeathHook(imp) {
+  try {
+    const orig = imp.playDie
+    if (typeof orig !== 'function') return
+    imp.playDie = function (...a) {
+      try { onKingGuardianDied(imp) } catch (e) { /* 拦截失败不影响死亡流程 */ }
+      return orig.apply(this, a)
+    }
+  } catch (err) {
+    noteOnce('kinghook', '国王拦截：小鬼死亡钩子挂载失败 ' + errText(err))
+  }
+}
+
+/** 守护小鬼死亡 → 强制终结尚未降临的国王 */
+function onKingGuardianDied(imp) {
+  try {
+    if (imp && imp.__zfaGuardianResolved) return    // 同一只小鬼只结算一次
+    const king = imp && imp.__zfaKingGuardianFor
+    if (!king || king.dead) return
+    if (imp) imp.__zfaGuardianResolved = true
+    if (typeof king.playSpecialGridZombieDieForced === 'function') {
+      king.playSpecialGridZombieDieForced()
+      logLine(null, '国王拦截成功：守护小鬼被击杀，未降临的国王已被终结')
+    } else if (typeof king.playDie === 'function') {
+      king.playDie()          // 退化路径：至少让国王退场
+      logLine(null, '国王拦截成功（退化路径）：国王已退场')
+    } else {
+      noteOnce('kingnodeath', '国王拦截：国王没有可用的终结入口')
+      return
+    }
+    stats.kingIntercepts += 1
+  } catch (err) {
+    noteOnce('kingkill', '国王拦截：结算失败 ' + errText(err))
+  }
+}
+
 /** 3. 街机游戏机：摘掉像素铁桶 + 每次召唤自扣血 */
 function handlerArcade(entry, thisArg, args, callNext) {
   let flag = null
@@ -487,6 +589,8 @@ function makeHandler(entry) {
           return handlerPixelDrain(entry, thisArg, args, callNext)
         case 'iceImmune':
           return handlerIceImmune(entry, thisArg, args, callNext)
+        case 'kingIntercept':
+          return handlerKingIntercept(entry, thisArg, args, callNext)
         case 'arcade':
           return handlerArcade(entry, thisArg, args, callNext)
         case 'spike':
@@ -744,6 +848,11 @@ export const __test__ = {
   handlerEmpDrop,
   handlerPixelDrain,
   handlerIceImmune,
+  handlerKingIntercept,
+  summonKingGuardian,
+  onKingGuardianDied,
+  applyGhostLook,
+  installGuardianDeathHook,
   selfHitIgnoreArmor,
   PIXEL_ZOMBIE_ID,
   ICE_IMMUNE_IDS,

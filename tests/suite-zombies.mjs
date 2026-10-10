@@ -227,6 +227,75 @@ export function runZombies({ T, mod }) {
     ok(T.ICE_IMMUNE_IDS.join(',') === '228,229', '免疫名单 = 冰鼬 228 + 雪人小鬼 229', T.ICE_IMMUNE_IDS.join(','))
   }
 
+  // ─────────────────────── 10. 国王可被拦截 ───────────────────────
+
+  section('10. 国王 · 可被拦截')
+
+  {
+    const entry = { key: 'kingIntercept', label: 't', names: ['DarkKingZombie'], module: 'm', methods: ['onLaneSpawnSettled'], mode: 'kingIntercept' }
+
+    // ① 出场时放行原实现，并只布置一次守护
+    const king = new FakeZombie({ ID: 1, dead: false, reversed: false })
+    king.inLnC = { SpawnZombie: () => Promise.resolve([]) }   // 本步只验标记
+    const c1 = callCtx(king)
+    T.handlerKingIntercept(entry, king, [0, true], c1.ctx.callNext)
+    ok(c1.calls.length === 1, '国王出场动画的原实现被放行')
+    ok(king.__zfaKingGuarded === true, '标记了「守护已布置」')
+    const c2 = callCtx(king)
+    T.handlerKingIntercept(entry, king, [0, true], c2.ctx.callNext)
+    ok(king.__zfaKingGuarded === true, '重复出场不会重复布置（幂等）')
+
+    // ② 打死守护小鬼 → 国王被强制终结（拦截成功）
+    let forced = 0
+    const king2 = new FakeZombie({ ID: 1, dead: false })
+    king2.playSpecialGridZombieDieForced = () => { forced += 1 }
+    const guard = new FakeZombie({ ID: 12 })
+    guard.__zfaKingGuardianFor = king2
+    king2.__zfaKingGuardian = guard
+    T.installGuardianDeathHook(guard)
+    guard.playDie()
+    ok(forced === 1, '小鬼一死就调用了国王的强制终结入口')
+    ok(T.stats.kingIntercepts === 1, '拦截计数 +1', String(T.stats.kingIntercepts))
+    guard.playDie()
+    ok(forced === 1, '同一只小鬼重复死亡不会重复结算')
+
+    // ③ 国王已经死了就不再结算
+    const king3 = new FakeZombie({ ID: 1, dead: true })
+    let forced3 = 0
+    king3.playSpecialGridZombieDieForced = () => { forced3 += 1 }
+    const guard3 = new FakeZombie({ ID: 12 })
+    guard3.__zfaKingGuardianFor = king3
+    T.onKingGuardianDied(guard3)
+    ok(forced3 === 0, '国王已死时不再重复终结')
+
+    // ④ 退化路径：国王没有强制终结入口时用 playDie 兜底
+    const king4 = new FakeZombie({ ID: 1, dead: false })
+    const guard4 = new FakeZombie({ ID: 12 })
+    guard4.__zfaKingGuardianFor = king4
+    T.onKingGuardianDied(guard4)
+    ok(king4.playDieCalls === 1, '退化路径调了国王的 playDie')
+
+    // ⑤ 隐形只降透明度，不动可见性（否则玩家打不到）
+    const g5 = new FakeZombie({ ID: 12 })
+    g5.node = { opacity: 255 }
+    g5.body = { node: { opacity: 255 } }
+    T.applyGhostLook(g5)
+    ok(g5.node.opacity < 255 && g5.node.opacity >= 0, '透明度被调低', String(g5.node.opacity))
+    ok(g5.body.node.opacity === g5.node.opacity, 'body 节点同步调整')
+
+    // ⑥ 拿不到 inLnC.SpawnZombie 时安静降级，不抛异常
+    const bad = new FakeZombie({ ID: 1 })
+    bad.inLnC = {}
+    let threw = false
+    try { T.summonKingGuardian(bad) } catch (e) { threw = true }
+    ok(!threw, '缺少生成接口时不抛异常')
+
+    // ⑦ 挂载点
+    const ke = T.TARGETS.find((t) => t.mode === 'kingIntercept')
+    ok(!!ke && ke.names[0] === 'DarkKingZombie', '挂在 DarkKingZombie 上', ke ? ke.names[0] : '(缺失)')
+    ok(ke && ke.methods[0] === 'onLaneSpawnSettled', '钩的是出场结算 onLaneSpawnSettled', ke ? ke.methods[0] : '')
+  }
+
   // ─────────────────────── 3. 街机游戏机 ───────────────────────
 
   section('3. 街机 · 摘掉像素铁桶 + 召唤自扣')

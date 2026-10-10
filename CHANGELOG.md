@@ -28,6 +28,10 @@
   引擎里它的血量字段是 `BugToughness`（僵尸本体是 `Toughness` = 190）。
   四个变体（`lostcity_bug` / `_armor1` / `_armor2` / `_armor4`）一并下调，
   走数据补丁。
+- **国王可被拦截**。国王降临（`onLaneSpawnSettled`）时在原地生成一只半透明的
+  守护小鬼；在它完全降临前打死这只小鬼，就会调用国王的
+  `playSpecialGridZombieDieForced()` 强制终结它。透明度可配
+  （`kingGuardianOpacity`，默认 0.35），同一只小鬼只结算一次。
 
 ### 移除
 
