@@ -53,16 +53,6 @@ const PIXEL_ZOMBIE_ID = 334
  */
 const ICE_IMMUNE_IDS = [229, 387]
 
-/**
- * 免疫电击伤害的僵尸 ID：
- *   273 = halloween_imp（万圣节小鬼）
- *   274 = halloween_gargantuar（弗兰肯斯坦巨尸）
- *
- * 做法与火龙小鬼（`dark_imp_dragon`）一致 —— 引擎里那一位是靠
- * `extraDamageScale(t) { return t.damageType == fire ? 0 : 1 }` 实现的，
- * 这里换成 `electricity`。
- */
-const ELECTRIC_IMMUNE_IDS = [273, 274]
 
 /**
  * 2. 巨人死后留下的障碍物对照表。
@@ -129,9 +119,6 @@ const TARGETS = [
   // ── 7. 冰河小鬼 / 冰鼬：完全免疫冰系控制 ──
   { key: 'iceImmune', label: '雪人小鬼/宝藏雪人·免疫冰冻', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setFreeze'], mode: 'iceImmune' },
   { key: 'iceImmune', label: '雪人小鬼/宝藏雪人·免疫减速', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setChill'], mode: 'iceImmune' },
-  // ── 4. 万圣节一系：免疫电击家族的伤害 ──
-  // 照抄火龙小鬼 dark_imp_dragon：extraDamageScale 返回 0 即完全免疫该伤害类型。
-  { key: 'electricImmune', label: '万圣节小鬼/弗兰肯斯坦·免疫电击', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['extraDamageScale'], mode: 'electricImmune' },
   // ── 10. 国王：出场期间生成「隐形小鬼」，打死它即可拦截国王 ──
   { key: 'kingIntercept', label: '国王·可被拦截', names: ['DarkKingZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['onLaneSpawnSettled', 'specialGridZombieOnEnable'], mode: 'kingIntercept' },
   // ── 2. 巨人死后留下对应世界的墓碑/障碍物 ──
@@ -143,7 +130,7 @@ const TARGETS = [
 const diagLines = []
 const notedOnce = new Set()
 const resolved = new Map()
-const stats = { jamThrows: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, electricImmune: 0, blocked: 0, kingGuards: 0, kingIntercepts: 0, gargTombs: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
+const stats = { jamThrows: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, blocked: 0, kingGuards: 0, kingIntercepts: 0, gargTombs: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
 
 let activeCtx = null
 
@@ -463,37 +450,6 @@ function handlerIceImmune(entry, thisArg, args, callNext) {
   return callNext(...args)
 }
 
-/**
- * 4. 万圣节一系（万圣节小鬼 / 弗兰肯斯坦巨尸）：免疫电击家族的伤害。
- *
- * 做法直接照抄引擎里的火龙小鬼 `dark_imp_dragon`：
- *
- *   extraDamageScale = function(t) {
- *     return t.damageType == ZombieDamageType.fire ? 0 : 1
- *   }
- *
- * `extraDamageScale` 是 `defaultDealDamage` 结算链上的一环 ——
- * 返回值会乘进伤害里，返回 0 就是**完全免疫该伤害类型**。
- * 这里把 `fire` 换成 `electricity`。
- *
- * `ZombieDamageType` 全量：physicle=0 / fire=1 / electricity=2 / potatoMine=3 / ray=4。
- */
-function handlerElectricImmune(entry, thisArg, args, callNext) {
-  const r = callNext(...args)
-  try {
-    if (thisArg && thisArg.ID && ELECTRIC_IMMUNE_IDS.indexOf(thisArg.ID) >= 0) {
-      const details = args[0]
-      const DT = REFS.ZombieDamageType
-      if (details && DT && details.damageType === DT.electricity) {
-        stats.electricImmune += 1
-        return 0                      // 完全免疫电击伤害
-      }
-    }
-  } catch (err) {
-    noteOnce('elecimmune', '电击免疫判定失败：' + errText(err))
-  }
-  return r
-}
 
 /**
  * 10. 国王可被拦截。
@@ -830,8 +786,6 @@ function makeHandler(entry) {
           return handlerPixelDrain(entry, thisArg, args, callNext)
         case 'iceImmune':
           return handlerIceImmune(entry, thisArg, args, callNext)
-        case 'electricImmune':
-          return handlerElectricImmune(entry, thisArg, args, callNext)
         case 'kingIntercept':
           return handlerKingIntercept(entry, thisArg, args, callNext)
         case 'gargTomb':
@@ -1094,8 +1048,6 @@ export const __test__ = {
   handlerEmpDrop,
   handlerPixelDrain,
   handlerIceImmune,
-  handlerElectricImmune,
-  ELECTRIC_IMMUNE_IDS,
   handlerKingIntercept,
   summonKingGuardian,
   onKingGuardianDied,

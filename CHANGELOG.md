@@ -4,6 +4,32 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.2] - 2026-10-10
+
+### 移除
+
+- **撤回「万圣节一系免疫电击」的改动**。经确认，**免疫电击是游戏自带的行为** ——
+  连原版的弗兰肯斯坦巨尸本身就免疫电击，不属于本模组该做的事。
+  相关代码、README 说明、CHANGELOG 记录与 `pack.json` 描述**全部清除**，
+  运行期也不再写任何日志。
+- 顺带修正 `pack.json` 描述里的条目编号（此前删项时留下了一处断号）。
+
+## [1.2.1] - 2026-10-10
+
+### 修复
+
+- **音波回归**（1.2.0 引入的回归）。改挂 `specialGargantuarUpdate` 时把 `onSmashing`
+  的拦截整个撤掉了，音波随之回来。现在两条并存：
+  `specialGargantuarUpdate` 负责按间隔扔小鬼，`onSmashing` 负责拦掉音波斩。
+- **巨人墓碑改用 `lane.SpawnTomb(type, ...)`**。引擎里冲浪板 / 音响 / 功夫TNT
+  都走这条路（`SpawnTomb` 13 处调用，`Square.placeTomb` 只有 4 处），
+  且它返回障碍物实例，可以直接设朝向。
+- **像素僵尸改用 ID + codename 双重判定**。原先只看 `ID === 334`，
+  一旦编号对不上就整条静默失效。
+- **补齐蜻蜓的换皮版本**：`summer_bug` / `summer_bug_armor1` / `summer_bug_armor2`
+  （萤火虫僵尸，仲夏夜世界）同样带 `BugToughness = 350`，现已一并削到 90。
+  数据补丁 22 → 25 条。
+
 ## [1.2.0] - 2026-10-10
 
 ### 修复（前两条来自玩家实测反馈）
@@ -27,18 +53,6 @@
   - **保留**雪人小鬼（`iceage_imp` 229）。
   - **新增**宝藏雪人（`treasureyeti` 387）—— 即「所有类型的雪人僵尸」。
 
-### 新增
-
-- **万圣节一系免疫电击伤害**：万圣节小鬼（`halloween_imp` 273）与
-  弗兰肯斯坦巨尸（`halloween_gargantuar` 274）。
-  做法直接照抄引擎里的**火龙小鬼** `dark_imp_dragon`：
-  ```js
-  extraDamageScale = function(t) {
-    return t.damageType == ZombieDamageType.fire ? 0 : 1
-  }
-  ```
-  这里把 `fire` 换成 `electricity`。`ZombieDamageType` 全量为
-  `physicle=0 / fire=1 / electricity=2 / potatoMine=3 / ray=4`。
 
 ## [1.1.0] - 2026-10-10
 
