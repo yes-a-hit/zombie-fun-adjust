@@ -32,6 +32,13 @@
   守护小鬼；在它完全降临前打死这只小鬼，就会调用国王的
   `playSpecialGridZombieDieForced()` 强制终结它。透明度可配
   （`kingGuardianOpacity`，默认 0.35），同一只小鬼只结算一次。
+- **巨人死后留下对应世界的墓碑 / 障碍物**。挂在巨人基类 `GargantuarZombie.playDie`
+  上，用 `Square.placeTomb(laneIndex, cIndex, type, ...)` 放置（引擎里
+  `EightiesArcadeZombie` 就是这么生成街机柜的）。
+  埃及 / 西部 / 黑暗 / 冰河 / 失落之城 / 教程各留本世界墓碑；
+  海盗及沙滩 / 霓虹 / 侏罗纪 / 空中无对应物者留小鬼木桶（`pirate_barrel`）；
+  **未来机甲巨人除外**；功夫三只铜人随机留 9 种兵器架之一；
+  节日系巨人不处理。
 
 ### 移除
 

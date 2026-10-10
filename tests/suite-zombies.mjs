@@ -296,6 +296,80 @@ export function runZombies({ T, mod }) {
     ok(ke && ke.methods[0] === 'onLaneSpawnSettled', '钩的是出场结算 onLaneSpawnSettled', ke ? ke.methods[0] : '')
   }
 
+  // ─────────────────────── 2. 巨人死后留障碍物 ───────────────────────
+
+  section('2. 巨人死后 · 留下对应世界的墓碑/障碍物')
+
+  {
+    const entry = { key: 'gargTomb', label: 't', names: ['GargantuarZombie'], module: 'm', methods: ['playDie'], mode: 'gargTomb' }
+
+    // ① 有对应墓碑的世界
+    for (const [g, want] of [
+      ['tutorial_gargantuar', 'gravestone_tutorial'],
+      ['egypt_gargantuar', 'gravestone_egypt'],
+      ['cowboy_gargantuar', 'gravestone_cowboy'],
+      ['dark_gargantuar', 'gravestone_dark'],
+      ['iceage_gargantuar', 'gravestone_iceage'],
+      ['lostcity_gargantuar', 'gravestone_lostcity'],
+    ]) {
+      ok(T.tombstoneFor(g) === want, `${g} → ${want}`, String(T.tombstoneFor(g)))
+    }
+
+    // ② 无对应障碍物的世界 → 小鬼木桶（按需求，海盗也走木桶）
+    for (const g of ['pirate_gargantuar', 'beach_gargantuar', 'eighties_gargantuar',
+                     'dino_gargantuar', 'sky_gargantuar']) {
+      ok(T.tombstoneFor(g) === T.FALLBACK_TOMBSTONE, `${g} → 小鬼木桶`, String(T.tombstoneFor(g)))
+    }
+    ok(T.FALLBACK_TOMBSTONE === 'pirate_barrel', '小鬼木桶 = pirate_barrel', T.FALLBACK_TOMBSTONE)
+
+    // ③ 未来机甲巨人除外
+    ok(T.tombstoneFor('future_gargantuar') === null, '未来机甲巨人什么都不留')
+
+    // ④ 表外的节日系巨人不处理
+    ok(T.tombstoneFor('halloween_gargantuar') === null, '表外的节日系巨人不处理')
+    ok(T.tombstoneFor(null) === null, '拿不到 codename 时不处理')
+
+    // ⑤ 功夫铜人 → 随机兵器架，结果必落在合法集合内
+    const racks = new Set()
+    let allLegal = true
+    for (let i = 0; i < 200; i++) {
+      for (const b of T.KONGFU_BRONZE) {
+        const t = T.tombstoneFor(b)
+        if (T.KONGFU_RACKS.indexOf(t) < 0) allLegal = false
+        racks.add(t)
+      }
+    }
+    ok(allLegal, '铜人留的永远是合法兵器架')
+    ok(racks.size > 1, '铜人留的兵器架是随机的（200 轮抽到多种）', String(racks.size))
+    ok(T.KONGFU_BRONZE.length === 3, '铜人共 3 只', String(T.KONGFU_BRONZE.length))
+
+    // ⑥ 死亡入口：放行原实现 + 幂等
+    const z = new FakeZombie({ ID: 1 })
+    z.inLnC = { LaneIndex: 2 }
+    const c1 = callCtx(z)
+    const r = T.handlerGargTomb(entry, z, [], c1.ctx.callNext)
+    ok(c1.calls.length === 1, '巨人死亡的原实现被放行')
+    ok(r === 'NEXT', '返回原实现的返回值')
+    ok(z.__zfaTombDropped === true, '标记了「已留墓碑」')
+    const c2 = callCtx(z)
+    T.handlerGargTomb(entry, z, [], c2.ctx.callNext)
+    ok(z.__zfaTombDropped === true, '重复触发不会重复留（幂等）')
+
+    // ⑦ 放置接口缺失时安静降级
+    let threw = false
+    try {
+      T.setRefs({ Square: null })
+      T.dropGargantuarTombstone(new FakeZombie({ ID: 1 }))
+    } catch (e) { threw = true }
+    ok(!threw, '缺少 Square.placeTomb 时不抛异常')
+    T.setRefs(makeRefs())
+
+    // ⑧ 挂载点：必须是巨人基类，21 个巨人共用
+    const ge = T.TARGETS.filter((t) => t.mode === 'gargTomb')
+    ok(ge.length === 1 && ge[0].names[0] === 'GargantuarZombie', '挂在巨人基类上', ge.length ? ge[0].names[0] : '(缺失)')
+    ok(Object.keys(T.GARG_TOMBSTONE).length === 11, '对照表覆盖 11 个巨人', String(Object.keys(T.GARG_TOMBSTONE).length))
+  }
+
   // ─────────────────────── 3. 街机游戏机 ───────────────────────
 
   section('3. 街机 · 摘掉像素铁桶 + 召唤自扣')

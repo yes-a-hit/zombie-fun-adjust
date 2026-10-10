@@ -48,6 +48,39 @@ const PIXEL_ZOMBIE_ID = 334
  */
 const ICE_IMMUNE_IDS = [228, 229]
 
+/**
+ * 2. 巨人死后留下的障碍物对照表。
+ * 左侧是 ZombieFeatures 里的巨人 codename，右侧是 TombstoneProps 里的障碍物 codename。
+ * `null` 表示该世界没有对应障碍物 → 按需求改留小鬼木桶。
+ * `future_gargantuar`（未来机甲巨人）按需求**除外**，故不在表内。
+ */
+const GARG_TOMBSTONE = {
+  tutorial_gargantuar: 'gravestone_tutorial',
+  egypt_gargantuar: 'gravestone_egypt',
+  pirate_gargantuar: 'pirate_barrel',
+  cowboy_gargantuar: 'gravestone_cowboy',
+  dark_gargantuar: 'gravestone_dark',
+  iceage_gargantuar: 'gravestone_iceage',
+  lostcity_gargantuar: 'gravestone_lostcity',
+  beach_gargantuar: null,
+  eighties_gargantuar: null,
+  dino_gargantuar: null,
+  sky_gargantuar: null,
+}
+
+/** 没有对应障碍物的世界统一留这个（海盗木桶，就是会弹小鬼的那只） */
+const FALLBACK_TOMBSTONE = 'pirate_barrel'
+
+/** 功夫铜人：死后随机留一个兵器架 */
+const KONGFU_RACKS = [
+  'kongfu_rack_torch', 'kongfu_rack_blade', 'kongfu_rack_bomb', 'kongfu_rack_flag',
+  'kongfu_rack_nunchaku', 'kongfu_rack_hammer', 'kongfu_rack_helmet',
+  'kongfu_rack_fan', 'kongfu_rack_3section_staff',
+]
+
+/** 三个铜人（功夫世界的「巨人」位） */
+const KONGFU_BRONZE = ['kongfu_bronze_chi', 'kongfu_bronze_strong', 'kongfu_bronze_hook']
+
 /** 每个类：定位名候选 + 模块路径 + 要包的方法 + 行为模式 */
 const TARGETS = [
   { key: 'gargantuarAoe', label: '重金属巨人·舞台效果改为扔小鬼', names: ['EightiesGargantuarZombie'], module: 'chunks:///_virtual/EightiesGargantuarZombie.ts', methods: ['onSmashing'], mode: 'jamThrow' },
@@ -75,13 +108,16 @@ const TARGETS = [
   { key: 'iceImmune', label: '冰河小鬼/冰鼬·免疫减速', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setChill'], mode: 'iceImmune' },
   // ── 10. 国王：出场期间生成「隐形小鬼」，打死它即可拦截国王 ──
   { key: 'kingIntercept', label: '国王·可被拦截', names: ['DarkKingZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['onLaneSpawnSettled'], mode: 'kingIntercept' },
+  // ── 2. 巨人死后留下对应世界的墓碑/障碍物 ──
+  // 挂巨人基类，21 个巨人都继承它；是否留下、留什么由 codename 查表决定。
+  { key: 'gargTomb', label: '巨人死后·留下墓碑/障碍物', names: ['GargantuarZombie'], module: 'chunks:///_virtual/GargantuarZombie.ts', methods: ['playDie'], mode: 'gargTomb' },
 ]
 
 /* ────────────────────── 基础设施 ────────────────────── */
 const diagLines = []
 const notedOnce = new Set()
 const resolved = new Map()
-const stats = { jamThrows: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, kingGuards: 0, kingIntercepts: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
+const stats = { jamThrows: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, kingGuards: 0, kingIntercepts: 0, gargTombs: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
 
 let activeCtx = null
 
@@ -434,8 +470,7 @@ function installGuardianDeathHook(imp) {
   }
 }
 
-/** 守护小鬼死亡 → 强制终结尚未降临的国王 */
-function onKingGuardianDied(imp) {
+/** 守护小鬼死亡 → 强制终结尚未降临的国王 */function onKingGuardianDied(imp) {
   try {
     if (imp && imp.__zfaGuardianResolved) return    // 同一只小鬼只结算一次
     const king = imp && imp.__zfaKingGuardianFor
@@ -454,6 +489,78 @@ function onKingGuardianDied(imp) {
     stats.kingIntercepts += 1
   } catch (err) {
     noteOnce('kingkill', '国王拦截：结算失败 ' + errText(err))
+  }
+}
+
+/**
+ * 2. 巨人死后在脚下留下对应世界的墓碑 / 障碍物。
+ *
+ * 引擎依据：
+ *   · 放置障碍物走 `Square.placeTomb(laneIndex, cIndex, type, false, false, false, false)`
+ *     —— 引擎里 `EightiesArcadeZombie` 就是这样生成街机柜的。
+ *   · 巨人 codename 用 `Zombies.getZombieFeature(id).CODENAME` 反查。
+ *   · 挂在 `GargantuarZombie.prototype.playDie` 上，21 个巨人都继承它。
+ *   · 未来机甲巨人按需求除外；三个功夫铜人随机留兵器架。
+ */
+function handlerGargTomb(entry, thisArg, args, callNext) {
+  try {
+    if (thisArg && !thisArg.__zfaTombDropped) {
+      thisArg.__zfaTombDropped = true      // 同一次死亡只留一次
+      dropGargantuarTombstone(thisArg)
+    }
+  } catch (err) {
+    noteOnce('gargtomb', '巨人墓碑结算失败：' + errText(err))
+  }
+  return callNext(...args)
+}
+
+/** 用 ID 反查僵尸 codename；拿不到返回 null（不影响原死亡流程） */
+function zombieCodename(z) {
+  try {
+    const engine = activeCtx && activeCtx.engine
+    if (!engine || !z) return null
+    const zombies = moduleExport(engine, 'chunks:///_virtual/Zombies.ts', 'zombies')
+    if (!zombies || typeof zombies.getZombieFeature !== 'function') return null
+    const feat = zombies.getZombieFeature(z.ID)
+    return feat && feat.CODENAME ? feat.CODENAME : null
+  } catch (err) { return null }
+}
+
+/**
+ * 纯查表：给定巨人 codename，决定死后该留什么。
+ * 返回 null 表示「不留」（未来机甲巨人、未收录的节日系巨人）。
+ */
+function tombstoneFor(code) {
+  if (!code || code === 'future_gargantuar') return null          // 未来机甲巨人：按需求除外
+  if (KONGFU_BRONZE.indexOf(code) >= 0) {
+    return KONGFU_RACKS[Math.floor(Math.random() * KONGFU_RACKS.length)]
+  }
+  if (code in GARG_TOMBSTONE) return GARG_TOMBSTONE[code] || FALLBACK_TOMBSTONE
+  return null
+}
+
+/** 查表决定留什么，再交给引擎放置 */
+function dropGargantuarTombstone(z) {
+  try {
+    const code = zombieCodename(z)
+    if (!code) { noteOnce('gargtombnoid', '巨人墓碑：拿不到 codename，本条跳过'); return }
+    const tomb = tombstoneFor(code)
+    if (!tomb) return
+
+    const Square = REFS.Square
+    const lane = z.inLnC
+    if (!Square || typeof Square.placeTomb !== 'function' || !lane) {
+      noteOnce('gargnotomb', '巨人墓碑：拿不到 Square.placeTomb 或所在车道，跳过')
+      return
+    }
+    const cIndex = typeof z.cIndexReal === 'number'
+      ? z.cIndexReal
+      : (typeof z.cIndex === 'number' ? z.cIndex : 0)
+    Square.placeTomb(lane.LaneIndex, cIndex, tomb, false, false, false, false)
+    stats.gargTombs += 1
+    logLine(null, `巨人墓碑：${code} 死后留下 ${tomb}`)
+  } catch (err) {
+    noteOnce('gargtombplace', '巨人墓碑：放置失败 ' + errText(err))
   }
 }
 
@@ -591,6 +698,8 @@ function makeHandler(entry) {
           return handlerIceImmune(entry, thisArg, args, callNext)
         case 'kingIntercept':
           return handlerKingIntercept(entry, thisArg, args, callNext)
+        case 'gargTomb':
+          return handlerGargTomb(entry, thisArg, args, callNext)
         case 'arcade':
           return handlerArcade(entry, thisArg, args, callNext)
         case 'spike':
@@ -853,6 +962,14 @@ export const __test__ = {
   onKingGuardianDied,
   applyGhostLook,
   installGuardianDeathHook,
+  handlerGargTomb,
+  dropGargantuarTombstone,
+  tombstoneFor,
+  zombieCodename,
+  GARG_TOMBSTONE,
+  FALLBACK_TOMBSTONE,
+  KONGFU_RACKS,
+  KONGFU_BRONZE,
   selfHitIgnoreArmor,
   PIXEL_ZOMBIE_ID,
   ICE_IMMUNE_IDS,

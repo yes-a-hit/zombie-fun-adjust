@@ -187,3 +187,72 @@ spikeweeds.forEach(sw => sw.normalSmash(this))
 
 **注意**：`Interval` 类字段既可能是数字，也可能是 `{ Min, Max }` 范围对象，
 引擎侧走 `getRandomFromRange`。改的时候保持原结构类型。
+
+---
+
+## v1.1.0 新增条目的引擎依据
+
+### 脉冲黄桃强制落地飞机
+
+- 脉冲黄桃对范围内目标调用 **`zombie.empStun(duration)`**，而**基类 `Zombie.empStun` 是空函数**。
+  全引擎只有 12 处覆写：`BeachSurferZombie` / `CowboyBullZombie` / `EightiesArcadeCabinet` /
+  `FutureImpZombie` / `KongfuBoss{Blade,Chi,Explode}Zombie` / `MechZombie` /
+  **`SkyDroneZombie`** / `Tomb` / `Zombie` / `ZombossMechZombie` —— 飞行僵尸里**仅有无人机**有份。
+- 「强制落地」的正统写法：`flying` 是带副作用的访问器，从 `true` 变 `false`
+  会触发 `onLanding()` → `specialZombieOnLandingForced()`。
+  `SkyImpZombie` 自带样例 `playSpecialZombieDieForced() { this.flying = false }`。
+- 目标六类：`SkyImpZombie` / `SkyBattlePlaneZombie` / `SkyTwinUpperZombie` /
+  `SkyTwinLowerZombie` / `SkyDroneZombie` / `SkyArbiterXZombie`。**僵王不在内**。
+
+### 重金属巨人舞台效果扔小鬼
+
+- `EightiesGargantuarProps.ImpType = "eighties_imp"`；舞台效果由 `isInJam` 判定。
+- 音波在 `onSmashing` 里经 `shootOnePea(WaveType)` 射出，改掉后自然消失。
+- 基类 `GargantuarZombie` 提供 `throwImpNow()` / `haveImp` / `getImpColumn()`；
+  每次投掷前 `haveImp = true` 即达成「无限小鬼」。
+
+### 像素僵尸破防伤害
+
+- `eighties_8bit` 是 `ZombieEnum` 值（**334**），**没有专属引擎类** → 只能按 ID 过滤。
+- `Zombie.prototype.characterUpdate` 的覆写者只有 `Character` 与 `Zombie` 自身，
+  **没有任何僵尸子类覆写它** → 安全的每帧入口（对比植物侧 `specialPlantUpdate` 的坑）。
+- `defaultDealDamage` 中若 `!t.armorProtection` 为真，则**直接扣主体 `health`**、完全跳过防具。
+
+### 冰系免疫
+
+- 冰冻下发口 `Zombie.setFreeze(seconds, flag)`，内部按 `objdataOwn.ChillInsteadOfFreeze`
+  或 `flying` 决定走减速还是真冰冻；减速下发口 `Zombie.setChill(seconds)`。
+- ID：`iceage_weasel` = **228**（冰鼬）、`iceage_imp` = **229**（雪人小鬼）。
+
+### 蜻蜓护甲
+
+- 蜻蜓僵尸（`lostcity_bug`）的 `Toughness` = 190 是**僵尸本体**；
+  **`BugToughness` = 350 才是背上那只蜻蜓（防具）**；另 `BuggedSPS` = 0.4。
+- 由 `LostcityBasicZombie` 持有，四个变体一并下调。
+
+### 国王拦截
+
+- 降临入口 `DarkKingZombie.onLaneSpawnSettled()`，内部播放 `"Spawn"` 动画。
+- 强制终结 `playSpecialGridZombieDieForced()`。
+- 生成僵尸 `inLnC.SpawnZombie(zombieEnum, styleEnum)`（`ZombieEnum.imp` = **12**），
+  另有 `SpawnZombieByZombieType(type, style, ...)` 写法。
+
+### 巨人墓碑
+
+- 放置障碍物 `Square.placeTomb(laneIndex, cIndex, type, false, false, false, false)`
+  —— 引擎里 `EightiesArcadeZombie` 就是这么生成街机柜的。
+- codename 反查 `Zombies.getZombieFeature(id).CODENAME`。
+- 挂 `GargantuarZombie.prototype.playDie`，21 个巨人共用。
+- 各世界对照表见 README「巨人死后留下对应世界的墓碑 / 障碍物」一节。
+- 常见障碍物：`gravestone_{tutorial,egypt,pirate,cowboy,future,dark,iceage,lostcity}`、
+  `pirate_barrel`（木桶）、`kongfu_rack_*`（9 种兵器架）。
+
+### 数据字段速查（v1.1.0 新增）
+
+| 内容 | 字段 | 所在文件 |
+|---|---|---|
+| 小鬼血量 | `Toughness` | `Objects\ZombieProps.json` |
+| **蜻蜓护甲血量** | `BugToughness` | `Objects\ZombieProps.json` |
+| 被蜻蜓附着时的速度 | `BuggedSPS` | `Objects\ZombieProps.json` |
+| 僵尸的世界归属 | `OBTAINWORLD` | `Features\ZombieFeatures.json` |
+| 墓碑 / 障碍物 codename | — | `Objects\TombstoneProps.json` |
