@@ -39,7 +39,15 @@ const CFG = {
 }
 
 /** 像素僵尸的 ID —— 取自 Zombies.ts 的 ZombieEnum（eighties_8bit = 334） */
-const PIXEL_ZOMBIE_ID = 334
+/**
+ * 像素僵尸的 ID 白名单 —— 取自 Zombies.ts 的 ZombieEnum：
+ *   334 = eighties_8bit        像素僵尸
+ *   335 = eighties_8bit_armor1 像素路障僵尸
+ *   336 = eighties_8bit_armor2 像素铁桶僵尸
+ *
+ * 1.2.5：原先只列了 334，导致**路障与铁桶两个变体不掉血**。
+ */
+const PIXEL_ZOMBIE_IDS = [334, 335, 336]
 
 /**
  * 免疫冰系的僵尸 ID（取自 ZombieEnum）：
@@ -97,6 +105,8 @@ const TARGETS = [
   // 1.2.4：舞台效果期间不做音波、也不扔鬼 —— 只做减伤 50%。
   // 用 `extraDamageScale` 返回 0.5（与火龙小鬼免疫火焰是同一套机制）。
   { key: 'jamReduce', label: '重金属巨人·舞台效果期间减伤50%', names: ['EightiesGargantuarZombie'], module: 'chunks:///_virtual/EightiesGargantuarZombie.ts', methods: ['extraDamageScale'], mode: 'jamReduce' },
+  // 1.2.5：音波必须一并删掉 —— 减伤 50% 再叠音波太 OP。
+  { key: 'gargantuarMute', label: '重金属巨人·移除音波斩', names: ['EightiesGargantuarZombie'], module: 'chunks:///_virtual/EightiesGargantuarZombie.ts', methods: ['onSmashing'], mode: 'muteAoe' },
   { key: 'arcadeSummon', label: '街机游戏机·召唤自扣血+禁铁桶', names: ['EightiesArcadeCabinet'], module: 'chunks:///_virtual/EightiesArcadeCabinet.ts', methods: ['specialTombUpdate'], mode: 'arcade' },
   { key: 'glitterSpike', label: '轮滑（闪耀）·地刺秒杀', names: ['EightiesGlitterZombie', 'EightiesGlitterZombieZombie'], module: 'chunks:///_virtual/EightiesGlitterZombie.ts', methods: ['whenStabbedBySpikeWeed'], mode: 'spike' },
   { key: 'breakdancerKick', label: '霹雳舞·一次只踢一只+自扣50', names: ['EightiesBreakDancerZombie', 'EightiesBreakDancerZombieZombie'], module: 'chunks:///_virtual/EightiesBreakDancerZombie.ts', methods: ['kick'], mode: 'kick' },
@@ -122,8 +132,7 @@ const TARGETS = [
   // ── 10. 国王：出场期间生成「隐形小鬼」，打死它即可拦截国王 ──
   // 1.2.3：国王改挂基类。DarkKingZombie 一旦定位不到就整条失效，
   // 这里同时对 Zombie 与 GridZombie 两个基类各挂一次，谁在就用谁。
-  { key: 'kingIntercept', label: '国王·可被拦截(Zombie)', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['onLaneSpawnSettled'], mode: 'kingIntercept' },
-  { key: 'kingIntercept', label: '国王·可被拦截(GridZombie)', names: ['GridZombie'], module: 'chunks:///_virtual/GridZombie.ts', methods: ['onLaneSpawnSettled'], mode: 'kingIntercept' },
+  // ── 10. 国王拦截：1.2.5 按指示移除（做了多版都拦不住，不再尝试）──
   // ── 2. 巨人死后留下对应世界的墓碑/障碍物 ──
   // 挂巨人基类，21 个巨人都继承它；是否留下、留什么由 codename 查表决定。
 ]
@@ -132,7 +141,7 @@ const TARGETS = [
 const diagLines = []
 const notedOnce = new Set()
 const resolved = new Map()
-const stats = { jamReduced: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, kingGuards: 0, kingIntercepts: 0, gargTombs: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
+const stats = { jamReduced: 0, aoesMuted: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, kingGuards: 0, kingIntercepts: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
 
 let activeCtx = null
 
@@ -313,6 +322,19 @@ function isInJamNow(z) {
 }
 
 /**
+ * 2. 重金属巨人：拦掉音波斩。
+ *
+ * 1.2.5 按反馈补上 —— 舞台效果期间已经有减伤 50%，再叠音波太 OP。
+ * 引擎里音波只在 `isInJam` 期间于 `onSmashing` 末段射出，整体拦掉即可，
+ * 普通砸击（走另一条路径）不受影响。
+ */
+function handlerMuteAoe(entry, thisArg, args, callNext) {
+  stats.aoesMuted += 1
+  noteOnce('aoe', '已拦截重金属巨人的音波斩（普通砸击保留）')
+  return undefined
+}
+
+/**
  * 2+5. 重金属巨人：舞台效果（Jam）期间持续扔小鬼。
  *
  * 1.1.0 挂的是 `onSmashing`，但那个方法只在 `_smash()` **末尾**被调用 ——
@@ -394,7 +416,7 @@ function handlerPixelDrain(entry, thisArg, args, callNext) {
  */
 function isPixelZombie(z) {
   try {
-    if (z.ID === PIXEL_ZOMBIE_ID) return true
+    if (PIXEL_ZOMBIE_IDS.indexOf(z.ID) >= 0) return true
     const code = zombieCodename(z)
     return code === 'eighties_8bit'
       || code === 'eighties_8bit_armor1'
@@ -819,8 +841,8 @@ function makeHandler(entry) {
           return handlerPixelDrain(entry, thisArg, args, callNext)
         case 'iceImmune':
           return handlerIceImmune(entry, thisArg, args, callNext)
-        case 'kingIntercept':
-          return handlerKingIntercept(entry, thisArg, args, callNext)
+        case 'muteAoe':
+          return handlerMuteAoe(entry, thisArg, args, callNext)
         case 'gargTomb':
           return handlerGargTomb(entry, thisArg, args, callNext)
         case 'arcade':
@@ -1089,7 +1111,8 @@ export const __test__ = {
   isKingZombie,
   zombieCodename,
   selfHitIgnoreArmor,
-  PIXEL_ZOMBIE_ID,
+  PIXEL_ZOMBIE_IDS,
+  handlerMuteAoe,
   ICE_IMMUNE_IDS,
   handlerArcade,
   handlerSpike,

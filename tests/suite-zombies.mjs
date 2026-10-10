@@ -60,6 +60,12 @@ export function runZombies({ T, mod }) {
     ok(T.CFG.jamDamageReduction === 0.5, "CFG 减伤比例 = 0.5", String(T.CFG.jamDamageReduction))
     ok(T.TARGETS.every((t) => t.mode !== "jamThrow" && t.mode !== "block"), "旧的扔鬼 / 音波拦截条目已移除")
     ok(T.TARGETS.every((t) => t.mode !== "gargTomb"), "巨人墓碑条目已移除")
+    // 1.2.5：音波必须一并删掉（减伤 50% 再叠音波太 OP）
+    const mute = T.TARGETS.find((t) => t.mode === "muteAoe")
+    ok(!!mute && mute.methods[0] === "onSmashing", "音波斩已单独拦掉", mute ? mute.methods.join(",") : "(缺失)")
+    ok("aoesMuted" in T.stats, "音波拦截计数已就位")
+    // 国王拦截已按指示移除
+    ok(T.TARGETS.every((t) => t.mode !== "kingIntercept"), "国王拦截条目已移除")
   }
 
   section('1. 脉冲黄桃 · 瘫痪并强制落地飞机')
@@ -112,7 +118,7 @@ export function runZombies({ T, mod }) {
     const entry = { key: 'pixelDrain', label: 't', names: ['Zombie'], module: 'm', methods: ['characterUpdate'], mode: 'pixelDrain' }
 
     // ① 累计满 1 秒扣一次，直接扣 health
-    const z = new FakeZombie({ ID: T.PIXEL_ZOMBIE_ID, health: 100 })
+    const z = new FakeZombie({ ID: 334, health: 100 })
     const c1 = callCtx(z, [0.5])
     T.handlerPixelDrain(entry, z, [0.5], c1.ctx.callNext)
     ok(z.health === 100, "不足 1 秒不扣血", String(z.health))
@@ -128,7 +134,7 @@ export function runZombies({ T, mod }) {
     ok(other.health === 100, "非像素僵尸不受影响")
 
     // ③ 已死亡的僵尸不再结算
-    const dead = new FakeZombie({ ID: T.PIXEL_ZOMBIE_ID, health: 100, dead: true })
+    const dead = new FakeZombie({ ID: 334, health: 100, dead: true })
     const c4 = callCtx(dead, [5])
     T.handlerPixelDrain(entry, dead, [5], c4.ctx.callNext)
     ok(dead.health === 100, "已死亡的僵尸不再结算")
@@ -208,75 +214,6 @@ export function runZombies({ T, mod }) {
     ok(T.ICE_IMMUNE_IDS.indexOf(228) < 0, "冰鼬（228）已按反馈移除")
     ok(T.ICE_IMMUNE_IDS.indexOf(227) < 0, "冰鼬囤积者（227）也不在内")
   }
-
-  section('10. 国王 · 可被拦截')
-
-  {
-    const entry = { key: 'kingIntercept', label: 't', names: ['DarkKingZombie'], module: 'm', methods: ['onLaneSpawnSettled'], mode: 'kingIntercept' }
-
-    // ① 出场时放行原实现，并只布置一次守护
-    const king = new FakeZombie({ ID: 1, dead: false, reversed: false, CODENAME: 'dark_king' })
-    king.inLnC = { SpawnZombie: () => Promise.resolve([]) }   // 本步只验标记
-    const c1 = callCtx(king)
-    T.handlerKingIntercept(entry, king, [0, true], c1.ctx.callNext)
-    ok(c1.calls.length === 1, '国王出场动画的原实现被放行')
-    ok(king.__zfaKingGuarded === true, '标记了「守护已布置」')
-    const c2 = callCtx(king)
-    T.handlerKingIntercept(entry, king, [0, true], c2.ctx.callNext)
-    ok(king.__zfaKingGuarded === true, '重复出场不会重复布置（幂等）')
-
-    // ② 打死守护小鬼 → 国王被强制终结（拦截成功）
-    let forced = 0
-    const king2 = new FakeZombie({ ID: 1, dead: false })
-    king2.playSpecialGridZombieDieForced = () => { forced += 1 }
-    const guard = new FakeZombie({ ID: 12 })
-    guard.__zfaKingGuardianFor = king2
-    king2.__zfaKingGuardian = guard
-    T.installGuardianDeathHook(guard)
-    guard.playDie()
-    ok(forced === 1, '小鬼一死就调用了国王的强制终结入口')
-    ok(T.stats.kingIntercepts === 1, '拦截计数 +1', String(T.stats.kingIntercepts))
-    guard.playDie()
-    ok(forced === 1, '同一只小鬼重复死亡不会重复结算')
-
-    // ③ 国王已经死了就不再结算
-    const king3 = new FakeZombie({ ID: 1, dead: true })
-    let forced3 = 0
-    king3.playSpecialGridZombieDieForced = () => { forced3 += 1 }
-    const guard3 = new FakeZombie({ ID: 12 })
-    guard3.__zfaKingGuardianFor = king3
-    T.onKingGuardianDied(guard3)
-    ok(forced3 === 0, '国王已死时不再重复终结')
-
-    // ④ 退化路径：国王没有强制终结入口时用 playDie 兜底
-    const king4 = new FakeZombie({ ID: 1, dead: false })
-    const guard4 = new FakeZombie({ ID: 12 })
-    guard4.__zfaKingGuardianFor = king4
-    T.onKingGuardianDied(guard4)
-    ok(king4.playDieCalls === 1, '退化路径调了国王的 playDie')
-
-    // ⑤ 隐形只降透明度，不动可见性（否则玩家打不到）
-    const g5 = new FakeZombie({ ID: 12 })
-    g5.node = { opacity: 255 }
-    g5.body = { node: { opacity: 255 } }
-    T.applyGhostLook(g5)
-    ok(g5.node.opacity < 255 && g5.node.opacity >= 0, '透明度被调低', String(g5.node.opacity))
-    ok(g5.body.node.opacity === g5.node.opacity, 'body 节点同步调整')
-
-    // ⑥ 拿不到 inLnC.SpawnZombie 时安静降级，不抛异常
-    const bad = new FakeZombie({ ID: 1 })
-    bad.inLnC = {}
-    let threw = false
-    try { T.summonKingGuardian(bad) } catch (e) { threw = true }
-    ok(!threw, '缺少生成接口时不抛异常')
-
-    // ⑦ 挂载点
-    const ke = T.TARGETS.find((t) => t.mode === 'kingIntercept')
-    ok(!!ke && ke.names[0] === 'Zombie', '改挂 Zombie 基类（子类定位不到时不再整条失效）', ke ? ke.names[0] : '(缺失)')
-    ok(ke && ke.methods[0] === 'onLaneSpawnSettled', '钩的是出场结算 onLaneSpawnSettled', ke ? ke.methods[0] : '')
-  }
-
-  // ─────────────────────── 2. 巨人死后留障碍物 ───────────────────────
 
   section('3. 街机 · 摘掉像素铁桶 + 召唤自扣')
 
