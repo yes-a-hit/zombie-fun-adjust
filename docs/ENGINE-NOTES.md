@@ -204,12 +204,14 @@ spikeweeds.forEach(sw => sw.normalSmash(this))
 - 目标六类：`SkyImpZombie` / `SkyBattlePlaneZombie` / `SkyTwinUpperZombie` /
   `SkyTwinLowerZombie` / `SkyDroneZombie` / `SkyArbiterXZombie`。**僵王不在内**。
 
-### 重金属巨人舞台效果扔小鬼
+### 重金属巨人舞台效果减伤
 
-- `EightiesGargantuarProps.ImpType = "eighties_imp"`；舞台效果由 `isInJam` 判定。
-- 音波在 `onSmashing` 里经 `shootOnePea(WaveType)` 射出，改掉后自然消失。
-- 基类 `GargantuarZombie` 提供 `throwImpNow()` / `haveImp` / `getImpColumn()`；
-  每次投掷前 `haveImp = true` 即达成「无限小鬼」。
+- `EightiesGargantuarProps` 的舞台效果由 `isInJam` 判定。
+- 减伤走 `extraDamageScale` —— `defaultDealDamage` 结算链上的一环，
+  返回值会乘进最终伤害；返回 `0.5` 即「承受伤害减半」。
+  （火龙小鬼免疫火焰靠它返回 `0`，同一套机制。）
+- 音波在 `onSmashing` 里经 `shootOnePea(WaveType)` 射出，**整体拦掉该方法**即可，
+  普通砸击走的是 `_smash()` 内部另一条路径，不受影响。
 
 ### 像素僵尸破防伤害
 
@@ -230,23 +232,6 @@ spikeweeds.forEach(sw => sw.normalSmash(this))
   **`BugToughness` = 350 才是背上那只蜻蜓（防具）**；另 `BuggedSPS` = 0.4。
 - 由 `LostcityBasicZombie` 持有，四个变体一并下调。
 
-### 国王拦截
-
-- 降临入口 `DarkKingZombie.onLaneSpawnSettled()`，内部播放 `"Spawn"` 动画。
-- 强制终结 `playSpecialGridZombieDieForced()`。
-- 生成僵尸 `inLnC.SpawnZombie(zombieEnum, styleEnum)`（`ZombieEnum.imp` = **12**），
-  另有 `SpawnZombieByZombieType(type, style, ...)` 写法。
-
-### 巨人墓碑
-
-- 放置障碍物 `Square.placeTomb(laneIndex, cIndex, type, false, false, false, false)`
-  —— 引擎里 `EightiesArcadeZombie` 就是这么生成街机柜的。
-- codename 反查 `Zombies.getZombieFeature(id).CODENAME`。
-- 挂 `GargantuarZombie.prototype.playDie`，21 个巨人共用。
-- 各世界对照表见 README「巨人死后留下对应世界的墓碑 / 障碍物」一节。
-- 常见障碍物：`gravestone_{tutorial,egypt,pirate,cowboy,future,dark,iceage,lostcity}`、
-  `pirate_barrel`（木桶）、`kongfu_rack_*`（9 种兵器架）。
-
 ### 数据字段速查（v1.1.0 新增）
 
 | 内容 | 字段 | 所在文件 |
@@ -255,4 +240,3 @@ spikeweeds.forEach(sw => sw.normalSmash(this))
 | **蜻蜓护甲血量** | `BugToughness` | `Objects\ZombieProps.json` |
 | 被蜻蜓附着时的速度 | `BuggedSPS` | `Objects\ZombieProps.json` |
 | 僵尸的世界归属 | `OBTAINWORLD` | `Features\ZombieFeatures.json` |
-| 墓碑 / 障碍物 codename | — | `Objects\TombstoneProps.json` |
