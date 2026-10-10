@@ -33,6 +33,7 @@ const CFG = {
   kingGuardianImpType: 12, // 10. 拦截国王用的「隐形小鬼」类型（ZombieEnum.imp = 12）
   kingGuardianSpawnStyle: 0, // 10. 生成风格（LnCSpawnZombieStyleEnum.appear = 0）
   kingGuardianOpacity: 0.35, // 10. 隐形程度（0 = 全透明，1 = 正常）
+  jamImpInterval: 2, // 5. 舞台效果期间扔小鬼的间隔（秒）
   selfKillDamage: 999999, // 「自杀」用的致死伤害
 }
 
@@ -40,13 +41,28 @@ const CFG = {
 const PIXEL_ZOMBIE_ID = 334
 
 /**
- * 免疫冰系的僵尸 ID（同样取自 ZombieEnum）：
- *   228 = iceage_weasel（冰鼬）
+ * 免疫冰系的僵尸 ID（取自 ZombieEnum）：
  *   229 = iceage_imp（雪人小鬼）
- * 需求里写作「冰河小鬼（冰鼬）」，而数据里这是**两只不同的僵尸**，
- * 因此两只一并免疫。
+ *   387 = treasureyeti（宝藏雪人）
+ *
+ * 1.1.0 时曾把冰鼬（228 / 227）算进来，1.2.0 按反馈**移除** ——
+ * 需求要的是「冰河小鬼」，而冰鼬是另一条线。
+ *
+ * 另外把冰冻与减速两个下发口一并拦掉（见 handlerIceImmune）：
+ * 只要在 `ICE_IMMUNE_IDS` 里，就完全不吃冰系控制。
  */
-const ICE_IMMUNE_IDS = [228, 229]
+const ICE_IMMUNE_IDS = [229, 387]
+
+/**
+ * 免疫电击伤害的僵尸 ID：
+ *   273 = halloween_imp（万圣节小鬼）
+ *   274 = halloween_gargantuar（弗兰肯斯坦巨尸）
+ *
+ * 做法与火龙小鬼（`dark_imp_dragon`）一致 —— 引擎里那一位是靠
+ * `extraDamageScale(t) { return t.damageType == fire ? 0 : 1 }` 实现的，
+ * 这里换成 `electricity`。
+ */
+const ELECTRIC_IMMUNE_IDS = [273, 274]
 
 /**
  * 2. 巨人死后留下的障碍物对照表。
@@ -83,7 +99,11 @@ const KONGFU_BRONZE = ['kongfu_bronze_chi', 'kongfu_bronze_strong', 'kongfu_bron
 
 /** 每个类：定位名候选 + 模块路径 + 要包的方法 + 行为模式 */
 const TARGETS = [
-  { key: 'gargantuarAoe', label: '重金属巨人·舞台效果改为扔小鬼', names: ['EightiesGargantuarZombie'], module: 'chunks:///_virtual/EightiesGargantuarZombie.ts', methods: ['onSmashing'], mode: 'jamThrow' },
+  // 1.2.0：改挂 specialGargantuarUpdate。
+  // `onSmashing` 只在 `_smash()` 末尾被调用 —— 也就是**砸到东西时才触发**，
+  // 场上没目标（空 A）时钩子根本不跑，扔小鬼自然也就没发生。
+  // `specialGargantuarUpdate` 是舞台效果期间的每帧入口，无论砸不砸都跑。
+  { key: 'gargantuarAoe', label: '重金属巨人·舞台效果改为扔小鬼', names: ['EightiesGargantuarZombie'], module: 'chunks:///_virtual/EightiesGargantuarZombie.ts', methods: ['specialGargantuarUpdate'], mode: 'jamThrow' },
   { key: 'arcadeSummon', label: '街机游戏机·召唤自扣血+禁铁桶', names: ['EightiesArcadeCabinet'], module: 'chunks:///_virtual/EightiesArcadeCabinet.ts', methods: ['specialTombUpdate'], mode: 'arcade' },
   { key: 'glitterSpike', label: '轮滑（闪耀）·地刺秒杀', names: ['EightiesGlitterZombie', 'EightiesGlitterZombieZombie'], module: 'chunks:///_virtual/EightiesGlitterZombie.ts', methods: ['whenStabbedBySpikeWeed'], mode: 'spike' },
   { key: 'breakdancerKick', label: '霹雳舞·一次只踢一只+自扣50', names: ['EightiesBreakDancerZombie', 'EightiesBreakDancerZombieZombie'], module: 'chunks:///_virtual/EightiesBreakDancerZombie.ts', methods: ['kick'], mode: 'kick' },
@@ -104,20 +124,23 @@ const TARGETS = [
   // 挂 Zombie.prototype.characterUpdate —— 该入口不被任何僵尸子类覆写。
   { key: 'pixelDrain', label: '像素僵尸·每秒自扣10（破防）', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['characterUpdate'], mode: 'pixelDrain' },
   // ── 7. 冰河小鬼 / 冰鼬：完全免疫冰系控制 ──
-  { key: 'iceImmune', label: '冰河小鬼/冰鼬·免疫冰冻', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setFreeze'], mode: 'iceImmune' },
-  { key: 'iceImmune', label: '冰河小鬼/冰鼬·免疫减速', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setChill'], mode: 'iceImmune' },
+  { key: 'iceImmune', label: '雪人小鬼/宝藏雪人·免疫冰冻', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setFreeze'], mode: 'iceImmune' },
+  { key: 'iceImmune', label: '雪人小鬼/宝藏雪人·免疫减速', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setChill'], mode: 'iceImmune' },
+  // ── 4. 万圣节一系：免疫电击家族的伤害 ──
+  // 照抄火龙小鬼 dark_imp_dragon：extraDamageScale 返回 0 即完全免疫该伤害类型。
+  { key: 'electricImmune', label: '万圣节小鬼/弗兰肯斯坦·免疫电击', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['extraDamageScale'], mode: 'electricImmune' },
   // ── 10. 国王：出场期间生成「隐形小鬼」，打死它即可拦截国王 ──
   { key: 'kingIntercept', label: '国王·可被拦截', names: ['DarkKingZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['onLaneSpawnSettled'], mode: 'kingIntercept' },
   // ── 2. 巨人死后留下对应世界的墓碑/障碍物 ──
   // 挂巨人基类，21 个巨人都继承它；是否留下、留什么由 codename 查表决定。
-  { key: 'gargTomb', label: '巨人死后·留下墓碑/障碍物', names: ['GargantuarZombie'], module: 'chunks:///_virtual/GargantuarZombie.ts', methods: ['playDie'], mode: 'gargTomb' },
+  { key: 'gargTomb', label: '巨人死后·留下墓碑/障碍物', names: ['GargantuarZombie'], module: 'chunks:///_virtual/GargantuarZombie.ts', methods: ['playDie', 'judgeDeath', 'onDamagedToHealth0'], mode: 'gargTomb' },
 ]
 
 /* ────────────────────── 基础设施 ────────────────────── */
 const diagLines = []
 const notedOnce = new Set()
 const resolved = new Map()
-const stats = { jamThrows: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, kingGuards: 0, kingIntercepts: 0, gargTombs: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
+const stats = { jamThrows: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, electricImmune: 0, kingGuards: 0, kingIntercepts: 0, gargTombs: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
 
 let activeCtx = null
 
@@ -270,34 +293,52 @@ function selfHit(z, amount) {
 /* ────────────────────── 各条行为 ────────────────────── */
 
 /**
- * 2+5. 重金属巨人：舞台效果（Jam）期间，把原本的空 A 改成直接扔小鬼。
+ * 2+5. 重金属巨人：舞台效果（Jam）期间持续扔小鬼。
  *
- * 音波原本是在 `onSmashing` 里射出的（`shootOnePea(WaveType)`，投射物 1000 伤害）。
- * 现在只要处于舞台效果期间，就改为扔小鬼、**且不受「每巨人一只」的限制**。
+ * 1.1.0 挂的是 `onSmashing`，但那个方法只在 `_smash()` **末尾**被调用 ——
+ * 场上没目标可砸时（也就是「空 A」）根本不触发，所以扔小鬼没发生。
+ *
+ * 1.2.0 改挂 `specialGargantuarUpdate`（舞台效果的每帧更新）：
+ * 自己维护一个投掷间隔，只要在舞台效果里就按节奏扔，与"有没有砸到东西"无关。
  *
  * 引擎依据：
- *   · `EightiesGargantuarProps.ImpType = "eighties_imp"` —— 小鬼类型现成
- *   · 基类 `GargantuarZombie` 提供 `throwImpNow()` / `haveImp` / `getImpColumn()`
+ *   · `EightiesGargantuarProps.ImpType = "eighties_imp"`
  *   · `isInJam` 为真 = 处于舞台效果期间
+ *   · 基类 `GargantuarZombie` 提供 `throwImpNow()` / `haveImp`
+ *   · 每次投掷前把 `haveImp` 补满即达成「无限小鬼」
  */
 function handlerJamThrowImp(entry, thisArg, args, callNext) {
+  const r = callNext(...args)          // 原每帧更新照常跑
   try {
-    if (thisArg && typeof thisArg.throwImpNow === 'function') {
-      let inJam = false
-      try { inJam = thisArg.isInJam === true } catch (e) { /* 读不到就按非舞台处理 */ }
-      if (inJam) {
-        // 「无限小鬼」的关键：每次投掷前把 haveImp 补满，
-        // 绕过基类「一个巨人只带一只小鬼」的限制
-        try { thisArg.haveImp = true } catch (e) { /* 写不进就交给引擎自己判断 */ }
-        thisArg.throwImpNow()
-        stats.jamThrows += 1
-        return undefined          // 不再射音波 —— 空 A 变成扔鬼
-      }
+    if (!thisArg || typeof thisArg.throwImpNow !== 'function') return r
+
+    let inJam = false
+    try { inJam = thisArg.isInJam === true } catch (e) { /* 读不到就按非舞台处理 */ }
+    if (!inJam) {
+      thisArg.__zfaImpCD = undefined   // 离开舞台效果就清掉计时
+      return r
     }
+
+    const dt = Number(args[0]) || 0
+    if (dt <= 0) return r
+
+    let cd = thisArg.__zfaImpCD
+    if (typeof cd !== 'number') cd = CFG.jamImpInterval
+    cd -= dt
+    if (cd > 0) {
+      thisArg.__zfaImpCD = cd
+      return r
+    }
+    thisArg.__zfaImpCD = CFG.jamImpInterval
+
+    try { thisArg.haveImp = true } catch (e) { /* 写不进就交给引擎自己判断 */ }
+    thisArg.throwImpNow()
+    stats.jamThrows += 1
+    return r
   } catch (err) {
     noteOnce('jamthrow', '舞台效果扔小鬼失败：' + errText(err))
+    return r
   }
-  return callNext(...args)        // 非舞台期间保持普通砸击与原行为
 }
 
 /**
@@ -394,6 +435,38 @@ function handlerIceImmune(entry, thisArg, args, callNext) {
     }
   } catch (err) { /* 读不到 ID 就放行 */ }
   return callNext(...args)
+}
+
+/**
+ * 4. 万圣节一系（万圣节小鬼 / 弗兰肯斯坦巨尸）：免疫电击家族的伤害。
+ *
+ * 做法直接照抄引擎里的火龙小鬼 `dark_imp_dragon`：
+ *
+ *   extraDamageScale = function(t) {
+ *     return t.damageType == ZombieDamageType.fire ? 0 : 1
+ *   }
+ *
+ * `extraDamageScale` 是 `defaultDealDamage` 结算链上的一环 ——
+ * 返回值会乘进伤害里，返回 0 就是**完全免疫该伤害类型**。
+ * 这里把 `fire` 换成 `electricity`。
+ *
+ * `ZombieDamageType` 全量：physicle=0 / fire=1 / electricity=2 / potatoMine=3 / ray=4。
+ */
+function handlerElectricImmune(entry, thisArg, args, callNext) {
+  const r = callNext(...args)
+  try {
+    if (thisArg && thisArg.ID && ELECTRIC_IMMUNE_IDS.indexOf(thisArg.ID) >= 0) {
+      const details = args[0]
+      const DT = REFS.ZombieDamageType
+      if (details && DT && details.damageType === DT.electricity) {
+        stats.electricImmune += 1
+        return 0                      // 完全免疫电击伤害
+      }
+    }
+  } catch (err) {
+    noteOnce('elecimmune', '电击免疫判定失败：' + errText(err))
+  }
+  return r
 }
 
 /**
@@ -519,10 +592,25 @@ function zombieCodename(z) {
   try {
     const engine = activeCtx && activeCtx.engine
     if (!engine || !z) return null
-    const zombies = moduleExport(engine, 'chunks:///_virtual/Zombies.ts', 'zombies')
-    if (!zombies || typeof zombies.getZombieFeature !== 'function') return null
-    const feat = zombies.getZombieFeature(z.ID)
-    return feat && feat.CODENAME ? feat.CODENAME : null
+
+    // 1.2.0 起改多路探测：模块路径与导出名都试一遍，避免单点失败导致整条静默失效
+    for (const [modPath, exportName] of [
+      ['chunks:///_virtual/Zombies.ts', 'zombies'],
+      ['chunks:///_virtual/Zombies.ts', 'Zombies'],
+    ]) {
+      const zs = moduleExport(engine, modPath, exportName)
+      if (zs && typeof zs.getZombieFeature === 'function') {
+        const feat = zs.getZombieFeature(z.ID)
+        if (feat && feat.CODENAME) return feat.CODENAME
+      }
+    }
+
+    // 兜底：僵尸实例或它自己的数据上可能直接带着 codename
+    if (typeof z.CODENAME === 'string' && z.CODENAME) return z.CODENAME
+    if (z.objdataOwn && typeof z.objdataOwn.CODENAME === 'string') return z.objdataOwn.CODENAME
+    if (z.objdataOwnOrg && typeof z.objdataOwnOrg.CODENAME === 'string') return z.objdataOwnOrg.CODENAME
+
+    return null
   } catch (err) { return null }
 }
 
@@ -543,14 +631,24 @@ function tombstoneFor(code) {
 function dropGargantuarTombstone(z) {
   try {
     const code = zombieCodename(z)
-    if (!code) { noteOnce('gargtombnoid', '巨人墓碑：拿不到 codename，本条跳过'); return }
+    if (!code) {
+      note('巨人墓碑：拿不到 codename（ID=' + (z && z.ID) + '），本条跳过')
+      return
+    }
     const tomb = tombstoneFor(code)
-    if (!tomb) return
+    if (!tomb) {
+      note('巨人墓碑：' + code + ' 不在对照表内（或为未来机甲巨人），跳过')
+      return
+    }
 
     const Square = REFS.Square
+    if (!Square || typeof Square.placeTomb !== 'function') {
+      note('巨人墓碑：拿不到 Square.placeTomb（Square=' + !!Square + '），跳过')
+      return
+    }
     const lane = z.inLnC
-    if (!Square || typeof Square.placeTomb !== 'function' || !lane) {
-      noteOnce('gargnotomb', '巨人墓碑：拿不到 Square.placeTomb 或所在车道，跳过')
+    if (!lane) {
+      note('巨人墓碑：' + code + ' 拿不到 inLnC（车道），跳过')
       return
     }
     const cIndex = typeof z.cIndexReal === 'number'
@@ -558,7 +656,7 @@ function dropGargantuarTombstone(z) {
       : (typeof z.cIndex === 'number' ? z.cIndex : 0)
     Square.placeTomb(lane.LaneIndex, cIndex, tomb, false, false, false, false)
     stats.gargTombs += 1
-    logLine(null, `巨人墓碑：${code} 死后留下 ${tomb}`)
+    note(`巨人墓碑：${code} 死后在第 ${lane.LaneIndex} 行第 ${cIndex} 列留下 ${tomb}`)
   } catch (err) {
     noteOnce('gargtombplace', '巨人墓碑：放置失败 ' + errText(err))
   }
@@ -696,6 +794,8 @@ function makeHandler(entry) {
           return handlerPixelDrain(entry, thisArg, args, callNext)
         case 'iceImmune':
           return handlerIceImmune(entry, thisArg, args, callNext)
+        case 'electricImmune':
+          return handlerElectricImmune(entry, thisArg, args, callNext)
         case 'kingIntercept':
           return handlerKingIntercept(entry, thisArg, args, callNext)
         case 'gargTomb':
@@ -957,6 +1057,8 @@ export const __test__ = {
   handlerEmpDrop,
   handlerPixelDrain,
   handlerIceImmune,
+  handlerElectricImmune,
+  ELECTRIC_IMMUNE_IDS,
   handlerKingIntercept,
   summonKingGuardian,
   onKingGuardianDied,

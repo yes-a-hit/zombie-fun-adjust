@@ -4,6 +4,42 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.0] - 2026-10-10
+
+### 修复（前两条来自玩家实测反馈）
+
+- **巨人死后不产生障碍物 → 已修复**。两处原因：
+  1. `zombieCodename()` 只试了一条模块路径 + 一个导出名，任何一处不匹配就整条静默失效。
+     现在改成多路探测，并加了从僵尸实例自身取 codename 的兜底。
+  2. 只挂了 `playDie` 一个死亡入口。现在同时挂 `playDie` / `judgeDeath` /
+     `onDamagedToHealth0`，三入口共用去重标记。
+  同时把诊断日志改成**每次都会写**（不再 `noteOnce`），失败时能直接看出卡在哪一步。
+
+- **重金属巨人空 A 时没扔小鬼 → 已修复**。根因是 1.1.0 把钩子挂在了 `onSmashing` 上，
+  而那个方法只在 `_smash()` **末尾**被调用 —— **场上没目标可砸时（空 A）根本不触发**。
+  现在改挂 `specialGargantuarUpdate`（舞台效果期间的每帧入口），
+  自己维护投掷间隔（`CFG.jamImpInterval`，默认 2 秒），与"有没有砸到东西"无关。
+
+### 变更
+
+- **冰系免疫范围修正**：
+  - **移除**冰鼬（`iceage_weasel` 228）与冰鼬囤积者（`iceage_weaselhoarder` 227）。
+  - **保留**雪人小鬼（`iceage_imp` 229）。
+  - **新增**宝藏雪人（`treasureyeti` 387）—— 即「所有类型的雪人僵尸」。
+
+### 新增
+
+- **万圣节一系免疫电击伤害**：万圣节小鬼（`halloween_imp` 273）与
+  弗兰肯斯坦巨尸（`halloween_gargantuar` 274）。
+  做法直接照抄引擎里的**火龙小鬼** `dark_imp_dragon`：
+  ```js
+  extraDamageScale = function(t) {
+    return t.damageType == ZombieDamageType.fire ? 0 : 1
+  }
+  ```
+  这里把 `fire` 换成 `electricity`。`ZombieDamageType` 全量为
+  `physicle=0 / fire=1 / electricity=2 / potatoMine=3 / ray=4`。
+
 ## [1.1.0] - 2026-10-10
 
 ### 新增

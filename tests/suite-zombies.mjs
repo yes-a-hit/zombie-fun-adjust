@@ -28,57 +28,52 @@ export function runZombies({ T, mod }) {
   ok(T.TARGETS.every((t) => t.names && t.names.length && (t.methods || t.method)), '每条都有类名与方法名')
   // ─────────────────────── 2. 重金属巨人 ───────────────────────
 
-  section('2+5. 重金属巨人 · 舞台效果改为扔小鬼')
+  section('2+5. 重金属巨人 · 舞台效果持续扔小鬼')
 
   {
     const entry = find('gargantuarAoe')
 
-    // ① 舞台效果期间：扔小鬼，不再射音波
+    // ① 舞台效果期间：按间隔扔，与「有没有砸到东西」无关
     const z = new FakeZombie({ isInJam: true, haveImp: false })
     let throws = 0
     z.throwImpNow = () => { throws += 1 }
-    const { ctx, calls } = callCtx(z)
-    const r = T.handlerJamThrowImp(entry, z, [{ name: 'smash' }], ctx.callNext)
-    ok(r === undefined, '舞台期间返回 undefined（不吃掉原实现的返回值）')
-    ok(calls.length === 0, '没有调用 callNext —— 音波不再射出')
-    ok(throws === 1, '扔出一次小鬼')
-    ok(z.haveImp === true, '投掷前把 haveImp 补满（「无限小鬼」的关键）')
-    ok(T.stats.jamThrows === 1, '扔鬼计数 +1', String(T.stats.jamThrows))
+    const c1 = callCtx(z)
+    const r1 = T.handlerJamThrowImp(entry, z, [0.5], c1.ctx.callNext)
+    ok(c1.calls.length === 1, "原每帧更新被放行")
+    ok(r1 === "NEXT", "返回原实现的返回值，不吃掉它")
+    ok(throws === 0, "第一帧只建立计时，不立即扔")
 
-    // ② 非舞台效果期间：保持原行为，普通砸击分毫不动
+    T.handlerJamThrowImp(entry, z, [2.0], callCtx(z).ctx.callNext)
+    ok(throws === 1, "累计满间隔后扔出一只小鬼", String(throws))
+    ok(z.haveImp === true, "投掷前把 haveImp 补满（「无限小鬼」的关键）")
+    ok(T.stats.jamThrows === 1, "扔鬼计数 +1", String(T.stats.jamThrows))
+
+    // ② 关键回归：1.1.0 挂 onSmashing，只在砸到东西时才触发 —— 空 A 场景不扔
+    ok(entry.methods[0] === "specialGargantuarUpdate",
+      "改挂 specialGargantuarUpdate（onSmashing 只在 _smash 末尾调用）", entry.methods.join(","))
+    ok(entry.methods.indexOf("onSmashing") < 0, "已不再挂 onSmashing")
+
+    // ③ 非舞台期间不扔，且计时被清掉
     const z2 = new FakeZombie({ isInJam: false })
-    let throws2 = 0
-    z2.throwImpNow = () => { throws2 += 1 }
-    const c2 = callCtx(z2)
-    const r2 = T.handlerJamThrowImp(entry, z2, [], c2.ctx.callNext)
-    ok(throws2 === 0, '非舞台期间不扔小鬼')
-    ok(c2.calls.length === 1 && r2 === 'NEXT', '非舞台期间放行原实现')
+    let t2 = 0
+    z2.throwImpNow = () => { t2 += 1 }
+    for (let i = 0; i < 5; i++) T.handlerJamThrowImp(entry, z2, [1.0], callCtx(z2).ctx.callNext)
+    ok(t2 === 0, "非舞台期间不扔小鬼")
+    ok(z2.__zfaImpCD === undefined, "离开舞台效果后计时被清掉")
 
-    // ③ 数量不限：连着来 5 次都扔得出去
+    // ④ 连续多帧：不受「每巨人一只」限制
     const z3 = new FakeZombie({ isInJam: true })
     let n = 0
     z3.throwImpNow = () => { n += 1 }
-    for (let i = 0; i < 5; i++) {
-      T.handlerJamThrowImp(entry, z3, [], callCtx(z3).ctx.callNext)
-    }
-    ok(n === 5, '连续 5 次全部扔出（不受每巨人一只的限制）', String(n))
+    for (let i = 0; i < 20; i++) T.handlerJamThrowImp(entry, z3, [0.5], callCtx(z3).ctx.callNext)
+    ok(n >= 4, "10 秒内多次扔出（不受每巨人一只的限制）", String(n))
 
-    // ④ 异常安全：缺接口 / isInJam 抛错时都放行原实现
+    // ⑤ 异常安全
     const plain = new FakeZombie()
     let threw = false
-    try { T.handlerJamThrowImp(entry, plain, [], callCtx(plain).ctx.callNext) } catch (e) { threw = true }
-    ok(!threw, '缺少 throwImpNow 时不抛异常')
-
-    const boom = new FakeZombie()
-    Object.defineProperty(boom, 'isInJam', { get() { throw new Error('boom') } })
-    let threw2 = false
-    try { T.handlerJamThrowImp(entry, boom, [], callCtx(boom).ctx.callNext) } catch (e) { threw2 = true }
-    ok(!threw2, 'isInJam 读取抛错时不外泄')
-
-    ok(T.stats.blocked === undefined, '旧的「拦截音波」统计已移除')
+    try { T.handlerJamThrowImp(entry, plain, [1], callCtx(plain).ctx.callNext) } catch (e) { threw = true }
+    ok(!threw, "缺少 throwImpNow 时不抛异常")
   }
-
-  // ─────────────────────── 1. 脉冲黄桃 ───────────────────────
 
   section('1. 脉冲黄桃 · 瘫痪并强制落地飞机')
 
@@ -185,49 +180,51 @@ export function runZombies({ T, mod }) {
 
   // ─────────────────────── 7. 冰河小鬼 / 冰鼬 ───────────────────────
 
-  section('7. 冰河小鬼 / 冰鼬 · 免疫冰系')
+  section('7. 雪人小鬼 / 宝藏雪人 · 免疫冰系')
 
   {
     const entry = { key: 'iceImmune', label: 't', names: ['Zombie'], module: 'm', methods: ['setFreeze'], mode: 'iceImmune' }
 
     // ① 两只目标僵尸的冰冻入口都被拦下
-    for (const [id, name] of [[228, '冰鼬'], [229, '雪人小鬼']]) {
+    for (const [id, name] of [[229, "雪人小鬼"], [387, "宝藏雪人"]]) {
       const z = new FakeZombie({ ID: id })
       const { ctx, calls } = callCtx(z, [8, true])
       const r = T.handlerIceImmune(entry, z, [8, true], ctx.callNext)
       ok(r === undefined, `${name}（ID ${id}）被拦下，不会进入冻结`)
       ok(calls.length === 0, `${name} 的原 setFreeze 未执行`)
     }
-    ok(T.stats.iceImmune === 2, '免疫计数 +2', String(T.stats.iceImmune))
+    ok(T.stats.iceImmune === 2, "免疫计数 +2", String(T.stats.iceImmune))
 
     // ② 其它僵尸照常被冻
     const other = new FakeZombie({ ID: 1 })
     const c2 = callCtx(other, [8, true])
     const r2 = T.handlerIceImmune(entry, other, [8, true], c2.ctx.callNext)
-    ok(c2.calls.length === 1 && r2 === 'NEXT', '其它僵尸照常冻结')
+    ok(c2.calls.length === 1 && r2 === "NEXT", "其它僵尸照常冻结")
 
     // ③ 减速入口同样被拦
-    const z3 = new FakeZombie({ ID: 228 })
+    const z3 = new FakeZombie({ ID: 229 })
     const c3 = callCtx(z3, [5])
     T.handlerIceImmune(entry, z3, [5], c3.ctx.callNext)
-    ok(c3.calls.length === 0, 'setChill（减速）入口同样被拦')
+    ok(c3.calls.length === 0, "setChill（减速）入口同样被拦 —— 不只是减速")
 
     // ④ 异常安全
     const boom = new FakeZombie()
-    Object.defineProperty(boom, 'ID', { get() { throw new Error('boom') } })
+    Object.defineProperty(boom, "ID", { get() { throw new Error("boom") } })
     let threw = false
     try { T.handlerIceImmune(entry, boom, [], callCtx(boom).ctx.callNext) } catch (e) { threw = true }
-    ok(!threw, 'ID 读取抛错时不外泄')
+    ok(!threw, "ID 读取抛错时不外泄")
 
     // ⑤ 挂载表：冰冻与减速两个入口各一条
-    const ice = T.TARGETS.filter((t) => t.mode === 'iceImmune')
-    ok(ice.length === 2, '冰冻与减速各一条挂载', String(ice.length))
-    const methods = ice.map((t) => t.methods[0]).sort().join(',')
-    ok(methods === 'setChill,setFreeze', '挂的是 setFreeze + setChill', methods)
-    ok(T.ICE_IMMUNE_IDS.join(',') === '228,229', '免疫名单 = 冰鼬 228 + 雪人小鬼 229', T.ICE_IMMUNE_IDS.join(','))
-  }
+    const ice = T.TARGETS.filter((t) => t.mode === "iceImmune")
+    ok(ice.length === 2, "冰冻与减速各一条挂载", String(ice.length))
+    const methods = ice.map((t) => t.methods[0]).sort().join(",")
+    ok(methods === "setChill,setFreeze", "挂的是 setFreeze + setChill", methods)
 
-  // ─────────────────────── 10. 国王可被拦截 ───────────────────────
+    // ⑥ 范围修正：冰鼬出局，雪人入列
+    ok(T.ICE_IMMUNE_IDS.join(",") === "229,387", "免疫名单 = 雪人小鬼 229 + 宝藏雪人 387", T.ICE_IMMUNE_IDS.join(","))
+    ok(T.ICE_IMMUNE_IDS.indexOf(228) < 0, "冰鼬（228）已按反馈移除")
+    ok(T.ICE_IMMUNE_IDS.indexOf(227) < 0, "冰鼬囤积者（227）也不在内")
+  }
 
   section('10. 国王 · 可被拦截')
 
