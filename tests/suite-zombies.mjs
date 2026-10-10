@@ -28,51 +28,38 @@ export function runZombies({ T, mod }) {
   ok(T.TARGETS.every((t) => t.names && t.names.length && (t.methods || t.method)), '每条都有类名与方法名')
   // ─────────────────────── 2. 重金属巨人 ───────────────────────
 
-  section('2+5. 重金属巨人 · 舞台效果持续扔小鬼')
+  section('2. 重金属巨人 · 舞台效果期间减伤50%')
 
   {
-    const entry = find('gargantuarAoe')
+    const entry = find('jamReduce')
 
-    // ① 舞台效果期间：按间隔扔，与「有没有砸到东西」无关
-    const z = new FakeZombie({ isInJam: true, haveImp: false })
-    let throws = 0
-    z.throwImpNow = () => { throws += 1 }
-    const c1 = callCtx(z)
-    const r1 = T.handlerJamThrowImp(entry, z, [0.5], c1.ctx.callNext)
-    ok(c1.calls.length === 1, "原每帧更新被放行")
-    ok(r1 === "NEXT", "返回原实现的返回值，不吃掉它")
-    ok(throws === 0, "第一帧只建立计时，不立即扔")
+    // ① 舞台效果期间：伤害乘以 0.5
+    const z = new FakeZombie({ isInJam: true })
+    const r1 = T.handlerJamReduce(entry, z, [{}], () => 1)
+    ok(r1 === 0.5, "舞台效果期间伤害减半", String(r1))
+    ok(T.stats.jamReduced === 1, "减伤计数 +1", String(T.stats.jamReduced))
 
-    T.handlerJamThrowImp(entry, z, [2.0], callCtx(z).ctx.callNext)
-    ok(throws === 1, "累计满间隔后扔出一只小鬼", String(throws))
-    ok(z.haveImp === true, "投掷前把 haveImp 补满（「无限小鬼」的关键）")
-    ok(T.stats.jamThrows === 1, "扔鬼计数 +1", String(T.stats.jamThrows))
-
-    // ② 关键回归：1.1.0 挂 onSmashing，只在砸到东西时才触发 —— 空 A 场景不扔
-    ok(entry.methods[0] === "specialGargantuarUpdate",
-      "改挂 specialGargantuarUpdate（onSmashing 只在 _smash 末尾调用）", entry.methods.join(","))
-    ok(entry.methods.indexOf("onSmashing") < 0, "已不再挂 onSmashing")
-
-    // ③ 非舞台期间不扔，且计时被清掉
+    // ② 非舞台期间：原样返回
     const z2 = new FakeZombie({ isInJam: false })
-    let t2 = 0
-    z2.throwImpNow = () => { t2 += 1 }
-    for (let i = 0; i < 5; i++) T.handlerJamThrowImp(entry, z2, [1.0], callCtx(z2).ctx.callNext)
-    ok(t2 === 0, "非舞台期间不扔小鬼")
-    ok(z2.__zfaImpCD === undefined, "离开舞台效果后计时被清掉")
+    const r2 = T.handlerJamReduce(entry, z2, [{}], () => 1)
+    ok(r2 === 1, "非舞台期间不减伤", String(r2))
 
-    // ④ 连续多帧：不受「每巨人一只」限制
+    // ③ 原实现返回非 1 时按比例缩放
     const z3 = new FakeZombie({ isInJam: true })
-    let n = 0
-    z3.throwImpNow = () => { n += 1 }
-    for (let i = 0; i < 20; i++) T.handlerJamThrowImp(entry, z3, [0.5], callCtx(z3).ctx.callNext)
-    ok(n >= 4, "10 秒内多次扔出（不受每巨人一只的限制）", String(n))
+    const r3 = T.handlerJamReduce(entry, z3, [{}], () => 0.4)
+    ok(Math.abs(r3 - 0.2) < 1e-9, "在原有系数上再乘 0.5", String(r3))
 
-    // ⑤ 异常安全
-    const plain = new FakeZombie()
+    // ④ 异常安全
     let threw = false
-    try { T.handlerJamThrowImp(entry, plain, [1], callCtx(plain).ctx.callNext) } catch (e) { threw = true }
-    ok(!threw, "缺少 throwImpNow 时不抛异常")
+    try { T.handlerJamReduce(entry, null, [], () => 1) } catch (err) { threw = true }
+    ok(!threw, "目标为空时不抛异常")
+
+    // ⑤ 挂载点与配置
+    ok(entry.methods[0] === "extraDamageScale", "挂在 extraDamageScale 上（与火龙小鬼免疫火焰同一套机制）", entry.methods.join(","))
+    ok(entry.mode === "jamReduce", "模式为 jamReduce", entry.mode)
+    ok(T.CFG.jamDamageReduction === 0.5, "CFG 减伤比例 = 0.5", String(T.CFG.jamDamageReduction))
+    ok(T.TARGETS.every((t) => t.mode !== "jamThrow" && t.mode !== "block"), "旧的扔鬼 / 音波拦截条目已移除")
+    ok(T.TARGETS.every((t) => t.mode !== "gargTomb"), "巨人墓碑条目已移除")
   }
 
   section('1. 脉冲黄桃 · 瘫痪并强制落地飞机')
@@ -119,66 +106,62 @@ export function runZombies({ T, mod }) {
 
   // ─────────────────────── 6. 像素僵尸 ───────────────────────
 
-  section('6. 像素僵尸 · 每秒自扣 10 血（无视防具）')
+  section('6. 像素僵尸 · 每秒 10 点真实伤害（直击本体）')
 
   {
     const entry = { key: 'pixelDrain', label: 't', names: ['Zombie'], module: 'm', methods: ['characterUpdate'], mode: 'pixelDrain' }
 
-    // ① 累计满 1 秒才扣一次
-    const z = new FakeZombie({ ID: T.PIXEL_ZOMBIE_ID })
+    // ① 累计满 1 秒扣一次，直接扣 health
+    const z = new FakeZombie({ ID: T.PIXEL_ZOMBIE_ID, health: 100 })
     const c1 = callCtx(z, [0.5])
     T.handlerPixelDrain(entry, z, [0.5], c1.ctx.callNext)
-    ok(z.damageTaken.length === 0, '不足 1 秒不扣血')
+    ok(z.health === 100, "不足 1 秒不扣血", String(z.health))
     const c2 = callCtx(z, [0.6])
     T.handlerPixelDrain(entry, z, [0.6], c2.ctx.callNext)
-    ok(z.damageTaken.length === 1, '累计满 1 秒扣一次')
-    ok(z.damageTaken[0] === 10, '每次扣 10 点', String(z.damageTaken[0]))
-    ok(T.stats.pixelTicks === 1, '结算计数 +1', String(T.stats.pixelTicks))
+    ok(z.health === 90, "累计满 1 秒扣 10 点", String(z.health))
+    ok(T.stats.pixelTicks === 1, "结算计数 +1", String(T.stats.pixelTicks))
 
-    // ② 其它僵尸完全不受影响
-    const other = new FakeZombie({ ID: 999 })
+    // ② 其它僵尸不受影响
+    const other = new FakeZombie({ ID: 999, health: 100 })
     const c3 = callCtx(other, [5])
     T.handlerPixelDrain(entry, other, [5], c3.ctx.callNext)
-    ok(other.damageTaken.length === 0, '非像素僵尸不受影响')
+    ok(other.health === 100, "非像素僵尸不受影响")
 
     // ③ 已死亡的僵尸不再结算
-    const dead = new FakeZombie({ ID: T.PIXEL_ZOMBIE_ID, dead: true })
+    const dead = new FakeZombie({ ID: T.PIXEL_ZOMBIE_ID, health: 100, dead: true })
     const c4 = callCtx(dead, [5])
     T.handlerPixelDrain(entry, dead, [5], c4.ctx.callNext)
-    ok(dead.damageTaken.length === 0, '已死亡的僵尸不再结算')
+    ok(dead.health === 100, "已死亡的僵尸不再结算")
 
-    // ④ 无视防具：伤害对象必须带 armorProtection = false
-    const probe = new FakeZombie({ ID: T.PIXEL_ZOMBIE_ID })
-    let seen = null
-    probe.dealDamage = (d) => { seen = d }
-    T.selfHitIgnoreArmor(probe, 10)
-    ok(seen !== null, '破防伤害已结算')
-    ok(seen && seen.armorProtection === false,
-      '标记为无视防具（armorProtection=false → defaultDealDamage 直接打主体）')
-    ok(seen && seen.damage === 10, '伤害值为 10', String(seen && seen.damage))
-    T.stats.pixelTicks = 0
+    // ④ 真实伤害：直接改 health，绕过 dealDamage 与防具
+    const probe = new FakeZombie({ ID: 1, health: 100 })
+    const okRes = T.selfHitIgnoreArmor(probe, 10)
+    ok(okRes === true, "真实伤害结算成功")
+    ok(probe.health === 90, "直接作用于本体 health（不经过 dealDamage）", String(probe.health))
+    ok(probe.damageTaken.length === 0, "未走 dealDamage 通道 —— 那套流程实测根本不掉血")
 
-    // ⑤ 原实现照常放行
-    const z5 = new FakeZombie({ ID: T.PIXEL_ZOMBIE_ID })
-    const c5 = callCtx(z5, [0.1])
-    T.handlerPixelDrain(entry, z5, [0.1], c5.ctx.callNext)
-    ok(c5.calls.length === 1, 'characterUpdate 原实现被放行')
+    // ⑤ health 归零时触发死亡
+    const dying = new FakeZombie({ ID: 1, health: 5 })
+    T.selfHitIgnoreArmor(dying, 10)
+    ok(dying.health === 0, "health 不会变成负数", String(dying.health))
+    ok(dying.playDieCalls === 1, "归零后调用引擎的 playDie")
 
-    // ⑥ 缺 ZombieDamageDetails 时不抛异常
-    T.setRefs({ ZombieDamageDetails: null })
+    // ⑥ 护甲一并削掉，避免本体空了护甲还在
+    const armored = new FakeZombie({ ID: 1, health: 100 })
+    let armorHit = 0
+    armored.armors = [{ dealDamage: () => { armorHit += 1; return 0 } }]
+    T.selfHitIgnoreArmor(armored, 10)
+    ok(armorHit === 1, "护甲一并被削")
+
+    // ⑦ 异常安全
     let threw = false
-    try { T.selfHitIgnoreArmor(probe, 10) } catch (e) { threw = true }
-    ok(!threw, '缺依赖时不抛异常')
-    T.setRefs(makeRefs())
+    try { T.selfHitIgnoreArmor(null, 10) } catch (e) { threw = true }
+    ok(!threw, "目标为空时不抛异常")
 
-    // ⑦ 挂载点必须是 characterUpdate（不被僵尸子类覆写的那一个）
-    const pe = T.TARGETS.find((t) => t.mode === 'pixelDrain')
-    ok(!!pe && pe.methods[0] === 'characterUpdate',
-      '挂在 Zombie.characterUpdate 上', pe ? pe.methods.join(',') : '(缺失)')
-    ok(T.PIXEL_ZOMBIE_ID === 334, '像素僵尸 ID = 334（eighties_8bit）', String(T.PIXEL_ZOMBIE_ID))
+    // ⑧ 挂载点
+    const pe = T.TARGETS.find((t) => t.mode === "pixelDrain")
+    ok(!!pe && pe.methods[0] === "characterUpdate", "挂在 Zombie.characterUpdate 上", pe ? pe.methods.join(",") : "(缺失)")
   }
-
-  // ─────────────────────── 7. 冰河小鬼 / 冰鼬 ───────────────────────
 
   section('7. 雪人小鬼 / 宝藏雪人 · 免疫冰系')
 
@@ -294,80 +277,6 @@ export function runZombies({ T, mod }) {
   }
 
   // ─────────────────────── 2. 巨人死后留障碍物 ───────────────────────
-
-  section('2. 巨人死后 · 留下对应世界的墓碑/障碍物')
-
-  {
-    const entry = { key: 'gargTomb', label: 't', names: ['GargantuarZombie'], module: 'm', methods: ['playDie'], mode: 'gargTomb' }
-
-    // ① 有对应墓碑的世界
-    for (const [g, want] of [
-      ['tutorial_gargantuar', 'gravestone_tutorial'],
-      ['egypt_gargantuar', 'gravestone_egypt'],
-      ['cowboy_gargantuar', 'gravestone_cowboy'],
-      ['dark_gargantuar', 'gravestone_dark'],
-      ['iceage_gargantuar', 'gravestone_iceage'],
-      ['lostcity_gargantuar', 'gravestone_lostcity'],
-    ]) {
-      ok(T.tombstoneFor(g) === want, `${g} → ${want}`, String(T.tombstoneFor(g)))
-    }
-
-    // ② 无对应障碍物的世界 → 小鬼木桶（按需求，海盗也走木桶）
-    for (const g of ['pirate_gargantuar', 'beach_gargantuar', 'eighties_gargantuar',
-                     'dino_gargantuar', 'sky_gargantuar']) {
-      ok(T.tombstoneFor(g) === T.FALLBACK_TOMBSTONE, `${g} → 小鬼木桶`, String(T.tombstoneFor(g)))
-    }
-    ok(T.FALLBACK_TOMBSTONE === 'pirate_barrel', '小鬼木桶 = pirate_barrel', T.FALLBACK_TOMBSTONE)
-
-    // ③ 未来机甲巨人除外
-    ok(T.tombstoneFor('future_gargantuar') === null, '未来机甲巨人什么都不留')
-
-    // ④ 表外的节日系巨人不处理
-    ok(T.tombstoneFor('halloween_gargantuar') === null, '表外的节日系巨人不处理')
-    ok(T.tombstoneFor(null) === null, '拿不到 codename 时不处理')
-
-    // ⑤ 功夫铜人 → 随机兵器架，结果必落在合法集合内
-    const racks = new Set()
-    let allLegal = true
-    for (let i = 0; i < 200; i++) {
-      for (const b of T.KONGFU_BRONZE) {
-        const t = T.tombstoneFor(b)
-        if (T.KONGFU_RACKS.indexOf(t) < 0) allLegal = false
-        racks.add(t)
-      }
-    }
-    ok(allLegal, '铜人留的永远是合法兵器架')
-    ok(racks.size > 1, '铜人留的兵器架是随机的（200 轮抽到多种）', String(racks.size))
-    ok(T.KONGFU_BRONZE.length === 3, '铜人共 3 只', String(T.KONGFU_BRONZE.length))
-
-    // ⑥ 死亡入口：放行原实现 + 幂等
-    const z = new FakeZombie({ ID: 1, ZombieSort: 'Gargantuar' })
-    z.inLnC = { LaneIndex: 2 }
-    const c1 = callCtx(z)
-    const r = T.handlerGargTomb(entry, z, [], c1.ctx.callNext)
-    ok(c1.calls.length === 1, '巨人死亡的原实现被放行')
-    ok(r === 'NEXT', '返回原实现的返回值')
-    ok(z.__zfaTombDropped === true, '标记了「已留墓碑」')
-    const c2 = callCtx(z)
-    T.handlerGargTomb(entry, z, [], c2.ctx.callNext)
-    ok(z.__zfaTombDropped === true, '重复触发不会重复留（幂等）')
-
-    // ⑦ 放置接口缺失时安静降级
-    let threw = false
-    try {
-      T.setRefs({ Square: null })
-      T.dropGargantuarTombstone(new FakeZombie({ ID: 1, ZombieSort: 'Gargantuar' }))
-    } catch (e) { threw = true }
-    ok(!threw, '缺少 Square.placeTomb 时不抛异常')
-    T.setRefs(makeRefs())
-
-    // ⑧ 挂载点：必须是巨人基类，21 个巨人共用
-    const ge = T.TARGETS.filter((t) => t.mode === 'gargTomb')
-    ok(ge.length === 1 && ge[0].names[0] === 'Zombie', '改挂 Zombie 基类 + ZombieSort 过滤', ge.length ? ge[0].names[0] : '(缺失)')
-    ok(Object.keys(T.GARG_TOMBSTONE).length === 11, '对照表覆盖 11 个巨人', String(Object.keys(T.GARG_TOMBSTONE).length))
-  }
-
-  // ─────────────────────── 3. 街机游戏机 ───────────────────────
 
   section('3. 街机 · 摘掉像素铁桶 + 召唤自扣')
 

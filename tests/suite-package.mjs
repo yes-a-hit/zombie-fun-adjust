@@ -15,7 +15,7 @@ export function runPackage({ pkgRoot }) {
   // ── 清单 ──
   const packJson = JSON.parse(readFileSync(at('pack.json'), 'utf8'))
   ok(packJson.uuid === 'yg.zombie-fun-adjust', 'uuid 正确', packJson.uuid)
-  ok(packJson.version === '1.2.3', 'version = 1.2.3', packJson.version)
+  ok(packJson.version === '1.2.4', 'version = 1.2.4', packJson.version)
   ok(packJson.apiVersion === 2, 'apiVersion = 2')
   ok(packJson.js && packJson.js.startup === true, 'js.startup = true（engine 访问权前提）')
   ok(!('requiredGpNextFeatures' in packJson), '未声明 requiredGpNextFeatures（本版本会拒绝加载）')

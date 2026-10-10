@@ -30,10 +30,11 @@ const CFG = {
   octopusThrowSelfHit: 150, // 章鱼每扔一次自扣（需求指定 150）
   jesterRotateSelfHitPerSec: 20, // 弄臣旋转时每秒掉血
   pixelZombieSelfHitPerSec: 10, // 6. 像素僵尸每秒自扣（无视防具）
-  kingGuardianImpType: 12, // 10. 拦截国王用的「隐形小鬼」类型（ZombieEnum.imp = 12）
+  kingGuardianImpType: 'imp', // 10. 守护小鬼 codename（走 SpawnZombieByZombieType）
+  kingGuardianImpEnum: 12, // 10. 同上，走 SpawnZombie 时用的枚举值（ZombieEnum.imp = 12）
   kingGuardianSpawnStyle: 0, // 10. 生成风格（LnCSpawnZombieStyleEnum.appear = 0）
   kingGuardianOpacity: 0.35, // 10. 隐形程度（0 = 全透明，1 = 正常）
-  jamImpInterval: 2, // 5. 舞台效果期间扔小鬼的间隔（秒）
+  jamDamageReduction: 0.5, // 2. 舞台效果期间减伤比例
   selfKillDamage: 999999, // 「自杀」用的致死伤害
 }
 
@@ -93,10 +94,9 @@ const TARGETS = [
   // `onSmashing` 只在 `_smash()` 末尾被调用 —— 也就是**砸到东西时才触发**，
   // 场上没目标（空 A）时钩子根本不跑，扔小鬼自然也就没发生。
   // `specialGargantuarUpdate` 是舞台效果期间的每帧入口，无论砸不砸都跑。
-  { key: 'gargantuarAoe', label: '重金属巨人·舞台效果改为扔小鬼', names: ['EightiesGargantuarZombie'], module: 'chunks:///_virtual/EightiesGargantuarZombie.ts', methods: ['specialGargantuarUpdate'], mode: 'jamThrow' },
-  // 1.2.1：音波必须一并拦掉，否则改挂每帧更新之后音波又回来了。
-  // 引擎里音波本来也只在 isInJam 期间射出，所以整体拦掉 onSmashing 即可。
-  { key: 'gargantuarMute', label: '重金属巨人·移除音波斩', names: ['EightiesGargantuarZombie'], module: 'chunks:///_virtual/EightiesGargantuarZombie.ts', methods: ['onSmashing'], mode: 'block' },
+  // 1.2.4：舞台效果期间不做音波、也不扔鬼 —— 只做减伤 50%。
+  // 用 `extraDamageScale` 返回 0.5（与火龙小鬼免疫火焰是同一套机制）。
+  { key: 'jamReduce', label: '重金属巨人·舞台效果期间减伤50%', names: ['EightiesGargantuarZombie'], module: 'chunks:///_virtual/EightiesGargantuarZombie.ts', methods: ['extraDamageScale'], mode: 'jamReduce' },
   { key: 'arcadeSummon', label: '街机游戏机·召唤自扣血+禁铁桶', names: ['EightiesArcadeCabinet'], module: 'chunks:///_virtual/EightiesArcadeCabinet.ts', methods: ['specialTombUpdate'], mode: 'arcade' },
   { key: 'glitterSpike', label: '轮滑（闪耀）·地刺秒杀', names: ['EightiesGlitterZombie', 'EightiesGlitterZombieZombie'], module: 'chunks:///_virtual/EightiesGlitterZombie.ts', methods: ['whenStabbedBySpikeWeed'], mode: 'spike' },
   { key: 'breakdancerKick', label: '霹雳舞·一次只踢一只+自扣50', names: ['EightiesBreakDancerZombie', 'EightiesBreakDancerZombieZombie'], module: 'chunks:///_virtual/EightiesBreakDancerZombie.ts', methods: ['kick'], mode: 'kick' },
@@ -126,17 +126,13 @@ const TARGETS = [
   { key: 'kingIntercept', label: '国王·可被拦截(GridZombie)', names: ['GridZombie'], module: 'chunks:///_virtual/GridZombie.ts', methods: ['onLaneSpawnSettled'], mode: 'kingIntercept' },
   // ── 2. 巨人死后留下对应世界的墓碑/障碍物 ──
   // 挂巨人基类，21 个巨人都继承它；是否留下、留什么由 codename 查表决定。
-  // 1.2.3：改挂 `Zombie` 基类的 playDie。
-  // 之前挂 `GargantuarZombie`，那个类一旦定位不到就整条静默失效；
-  // 改挂基类后任何僵尸死亡都会经过这里，再用 ZombieSort 过滤出巨人。
-  { key: 'gargTomb', label: '巨人死后·留下墓碑/障碍物', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['playDie'], mode: 'gargTomb' },
 ]
 
 /* ────────────────────── 基础设施 ────────────────────── */
 const diagLines = []
 const notedOnce = new Set()
 const resolved = new Map()
-const stats = { jamThrows: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, blocked: 0, kingGuards: 0, kingIntercepts: 0, gargTombs: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
+const stats = { jamReduced: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, kingGuards: 0, kingIntercepts: 0, gargTombs: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
 
 let activeCtx = null
 
@@ -288,11 +284,32 @@ function selfHit(z, amount) {
 
 /* ────────────────────── 各条行为 ────────────────────── */
 
-/** 2. 重金属巨人：拦掉音波斩（舞台效果期间由扔小鬼取代） */
-function handlerBlock(entry, thisArg, args, callNext) {
-  stats.blocked += 1
-  noteOnce('aoe', '已拦截重金属巨人的音波斩（普通砸击保留）')
-  return undefined
+/**
+ * 2. 重金属巨人：舞台效果期间减伤 50%。
+ *
+ * 1.2.4 需求明确：不做音波斩、也不扔鬼 —— 舞台效果期间只保留一条，
+ * 即承受的伤害乘以 0.5。
+ *
+ * 引擎依据：`extraDamageScale` 是 `defaultDealDamage` 结算链上的一环，
+ * 返回值会乘进最终伤害 —— 火龙小鬼免疫火焰就是靠它返回 0。
+ */
+function handlerJamReduce(entry, thisArg, args, callNext) {
+  const base = callNext(...args)
+  try {
+    if (isInJamNow(thisArg)) {
+      const mul = typeof base === 'number' ? base : 1
+      stats.jamReduced += 1
+      return mul * (1 - CFG.jamDamageReduction)
+    }
+  } catch (err) {
+    noteOnce('jamreduce', '舞台减伤判定失败：' + errText(err))
+  }
+  return base
+}
+
+/** 是否处于舞台效果期间 */
+function isInJamNow(z) {
+  try { return !!(z && z.isInJam === true) } catch (e) { return false }
 }
 
 /**
@@ -310,39 +327,7 @@ function handlerBlock(entry, thisArg, args, callNext) {
  *   · 基类 `GargantuarZombie` 提供 `throwImpNow()` / `haveImp`
  *   · 每次投掷前把 `haveImp` 补满即达成「无限小鬼」
  */
-function handlerJamThrowImp(entry, thisArg, args, callNext) {
-  const r = callNext(...args)          // 原每帧更新照常跑
-  try {
-    if (!thisArg || typeof thisArg.throwImpNow !== 'function') return r
-
-    let inJam = false
-    try { inJam = thisArg.isInJam === true } catch (e) { /* 读不到就按非舞台处理 */ }
-    if (!inJam) {
-      thisArg.__zfaImpCD = undefined   // 离开舞台效果就清掉计时
-      return r
-    }
-
-    const dt = Number(args[0]) || 0
-    if (dt <= 0) return r
-
-    let cd = thisArg.__zfaImpCD
-    if (typeof cd !== 'number') cd = CFG.jamImpInterval
-    cd -= dt
-    if (cd > 0) {
-      thisArg.__zfaImpCD = cd
-      return r
-    }
-    thisArg.__zfaImpCD = CFG.jamImpInterval
-
-    try { thisArg.haveImp = true } catch (e) { /* 写不进就交给引擎自己判断 */ }
-    thisArg.throwImpNow()
-    stats.jamThrows += 1
-    return r
-  } catch (err) {
-    noteOnce('jamthrow', '舞台效果扔小鬼失败：' + errText(err))
-    return r
-  }
-}
+/* 1.2.4：扔小鬼逻辑已移除 —— 舞台效果期间改为单纯减伤 50%（见 handlerJamReduce）。 */
 
 /**
  * 1. 脉冲黄桃：瘫痪并**强制落地**（僵王除外）。
@@ -418,20 +403,37 @@ function isPixelZombie(z) {
 }
 
 /**
- * 无视防具的固定伤害。
- * 关键：把 `armorProtection` 置假，`defaultDealDamage` 就会跳过防具、直接扣 `health`。
+ * 直接作用于本体的**真实伤害** —— 绕开 `dealDamage` 整套流程，直接扣 `health`。
+ *
+ * 1.2.4：原来的写法是构造 `ZombieDamageDetails` 并把 `armorProtection` 置假，
+ * 但实测**根本不掉血**（引擎的防具与减伤判定比预想的复杂）。
+ * 改成直接改 `health` 的「真实伤害」：这条路径不经过任何减伤、免疫与防具判定，
+ * 无论对方带什么护具都必定生效。
+ *
+ * 护甲一并削掉，避免出现「本体空了但护甲还在」的怪相。
+ * 归零后走引擎自己的死亡入口 `playDie()`。
  */
 function selfHitIgnoreArmor(z, amount) {
   try {
-    const ZDD = REFS.ZombieDamageDetails
-    if (!ZDD) return false
-    const d = new ZDD(amount, false, false, false, null)
-    d.damage = amount
-    d.armorProtection = false      // ← 绕过防具的关键
-    z.dealDamage(d)
-    return true
+    if (!z || typeof z.health !== 'number') return false
+    const before = z.health
+    z.health = Math.max(0, before - amount)
+
+    try {
+      if (Array.isArray(z.armors) && z.armors.length
+          && typeof z.armors[0].dealDamage === 'function') {
+        z.armors[0].dealDamage(amount)
+      }
+    } catch (e) { /* 护甲处理失败不影响本体扣血 */ }
+
+    if (z.health <= 0) {
+      try {
+        if (typeof z.playDie === 'function') z.playDie()
+      } catch (e) { /* 死亡流程交给引擎 */ }
+    }
+    return z.health < before
   } catch (err) {
-    noteOnce('ignorearmor', '破防伤害结算失败：' + errText(err))
+    noteOnce('ignorearmor', '真实伤害结算失败：' + errText(err))
     return false
   }
 }
@@ -492,13 +494,19 @@ function handlerKingIntercept(entry, thisArg, args, callNext) {
 function summonKingGuardian(king) {
   try {
     const lnc = king.inLnC
-    if (!lnc || typeof lnc.SpawnZombie !== 'function') {
-      note('国王拦截：inLnC 或 SpawnZombie 不可用（lnc=' + !!lnc
-        + '，SpawnZombie=' + !!(lnc && lnc.SpawnZombie) + '），本条不生效')
+    if (!lnc) { note('国王拦截：拿不到 inLnC，本条不生效'); return }
+    const canByType = typeof lnc.SpawnZombieByZombieType === 'function'
+    const canByEnum = typeof lnc.SpawnZombie === 'function'
+    if (!canByType && !canByEnum) {
+      note('国王拦截：inLnC 上两种生成接口都没有，本条不生效')
       return
     }
     Promise.resolve(
-      lnc.SpawnZombie(CFG.kingGuardianImpType, CFG.kingGuardianSpawnStyle)
+      canByType
+        // 1.2.4：优先用 SpawnZombieByZombieType（按 codename 生成，比枚举值可靠）
+        ? lnc.SpawnZombieByZombieType(CFG.kingGuardianImpType, CFG.kingGuardianSpawnStyle,
+            false, 0.5, 0, null, false, !!king.reversed, false)
+        : lnc.SpawnZombie(CFG.kingGuardianImpEnum, CFG.kingGuardianSpawnStyle)
     ).then((list) => {
       const imp = list && list[0]
       if (!imp) { note('国王拦截：守护小鬼没有生成出来（返回 ' + JSON.stringify(list) + '）'); return }
@@ -803,10 +811,8 @@ function makeHandler(entry) {
   return function ({ thisArg, args, callNext }) {
     try {
       switch (entry.mode) {
-        case 'jamThrow':
-          return handlerJamThrowImp(entry, thisArg, args, callNext)
-        case 'block':
-          return handlerBlock(entry, thisArg, args, callNext)
+        case 'jamReduce':
+          return handlerJamReduce(entry, thisArg, args, callNext)
         case 'empDrop':
           return handlerEmpDrop(entry, thisArg, args, callNext)
         case 'pixelDrain':
@@ -889,7 +895,7 @@ function installHook(ctx, entry, cls) {
 /* ────────────────────── 面板 / 诊断 ────────────────────── */
 function describeStats() {
   return [
-    `音波AOE拦截 ${stats.blocked}`,
+    `舞台效果减伤 ${stats.jamReduced}`,
     `街机召唤 ${stats.arcadeSummons}`,
     `地刺秒杀 ${stats.spikeKills}`,
     `踢击 ${stats.kicks}`,
@@ -1070,8 +1076,8 @@ export const __test__ = {
   makeHandler,
   installHook,
   locateClass,
-  handlerJamThrowImp,
-  handlerBlock,
+  handlerJamReduce,
+  isInJamNow,
   handlerEmpDrop,
   handlerPixelDrain,
   handlerIceImmune,
@@ -1080,16 +1086,8 @@ export const __test__ = {
   onKingGuardianDied,
   applyGhostLook,
   installGuardianDeathHook,
-  handlerGargTomb,
-  dropGargantuarTombstone,
-  isGargantuar,
   isKingZombie,
-  tombstoneFor,
   zombieCodename,
-  GARG_TOMBSTONE,
-  FALLBACK_TOMBSTONE,
-  KONGFU_RACKS,
-  KONGFU_BRONZE,
   selfHitIgnoreArmor,
   PIXEL_ZOMBIE_ID,
   ICE_IMMUNE_IDS,
