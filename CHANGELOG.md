@@ -4,6 +4,33 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.3] - 2026-10-10
+
+### 修复
+
+- **巨人依旧不产生障碍物 → 改挂基类**。
+  之前挂的是 `GargantuarZombie`，那个类一旦定位不到就**整条静默失效**。
+  现在改挂 **`Zombie.prototype.playDie`** —— 任何僵尸死亡都会经过这里，
+  再用引擎给巨人打的标记 `ZombieSort === "Gargantuar"` 过滤（实例、`objdataOwn`、
+  `objdataOwnOrg` 三处都查，外加 codename 以 `_gargantuar` 结尾兜底）。
+  非巨人直接跳过，不写日志。
+
+- **`zombieCodename()` 的兜底顺序错了**（真机隐患）。
+  原来 `engine` 检查在前，`activeCtx` 为空时直接 `return null`，
+  后面那段「从僵尸实例自身取 codename」的兜底**永远走不到**。
+  现在把兜底提到前面，engine 不可用时仍能靠实例上的 `CODENAME` 工作。
+  这条同时修好了巨人墓碑与国王拦截两条链路。
+
+- **国王拦截改挂基类**。从 `DarkKingZombie` 改为同时对
+  `Zombie` 与 `GridZombie` 两个基类各挂一次 `onLaneSpawnSettled`，谁在就用谁；
+  并加了 `isKingZombie()`（codename 以 `dark_king` 开头，兼容亚瑟王变体）过滤，
+  避免所有僵尸都生成守护小鬼。
+
+### 说明
+
+- 冰系免疫**保持现状**：只免疫冰冻与减速，不做伤害免疫
+  （引擎 `ZombieDamageType` 里没有 `ice` 类型，无法按伤害类型处理）。
+
 ## [1.2.2] - 2026-10-10
 
 ### 移除

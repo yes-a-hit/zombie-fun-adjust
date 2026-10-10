@@ -232,7 +232,7 @@ export function runZombies({ T, mod }) {
     const entry = { key: 'kingIntercept', label: 't', names: ['DarkKingZombie'], module: 'm', methods: ['onLaneSpawnSettled'], mode: 'kingIntercept' }
 
     // ① 出场时放行原实现，并只布置一次守护
-    const king = new FakeZombie({ ID: 1, dead: false, reversed: false })
+    const king = new FakeZombie({ ID: 1, dead: false, reversed: false, CODENAME: 'dark_king' })
     king.inLnC = { SpawnZombie: () => Promise.resolve([]) }   // 本步只验标记
     const c1 = callCtx(king)
     T.handlerKingIntercept(entry, king, [0, true], c1.ctx.callNext)
@@ -289,7 +289,7 @@ export function runZombies({ T, mod }) {
 
     // ⑦ 挂载点
     const ke = T.TARGETS.find((t) => t.mode === 'kingIntercept')
-    ok(!!ke && ke.names[0] === 'DarkKingZombie', '挂在 DarkKingZombie 上', ke ? ke.names[0] : '(缺失)')
+    ok(!!ke && ke.names[0] === 'Zombie', '改挂 Zombie 基类（子类定位不到时不再整条失效）', ke ? ke.names[0] : '(缺失)')
     ok(ke && ke.methods[0] === 'onLaneSpawnSettled', '钩的是出场结算 onLaneSpawnSettled', ke ? ke.methods[0] : '')
   }
 
@@ -341,7 +341,7 @@ export function runZombies({ T, mod }) {
     ok(T.KONGFU_BRONZE.length === 3, '铜人共 3 只', String(T.KONGFU_BRONZE.length))
 
     // ⑥ 死亡入口：放行原实现 + 幂等
-    const z = new FakeZombie({ ID: 1 })
+    const z = new FakeZombie({ ID: 1, ZombieSort: 'Gargantuar' })
     z.inLnC = { LaneIndex: 2 }
     const c1 = callCtx(z)
     const r = T.handlerGargTomb(entry, z, [], c1.ctx.callNext)
@@ -356,14 +356,14 @@ export function runZombies({ T, mod }) {
     let threw = false
     try {
       T.setRefs({ Square: null })
-      T.dropGargantuarTombstone(new FakeZombie({ ID: 1 }))
+      T.dropGargantuarTombstone(new FakeZombie({ ID: 1, ZombieSort: 'Gargantuar' }))
     } catch (e) { threw = true }
     ok(!threw, '缺少 Square.placeTomb 时不抛异常')
     T.setRefs(makeRefs())
 
     // ⑧ 挂载点：必须是巨人基类，21 个巨人共用
     const ge = T.TARGETS.filter((t) => t.mode === 'gargTomb')
-    ok(ge.length === 1 && ge[0].names[0] === 'GargantuarZombie', '挂在巨人基类上', ge.length ? ge[0].names[0] : '(缺失)')
+    ok(ge.length === 1 && ge[0].names[0] === 'Zombie', '改挂 Zombie 基类 + ZombieSort 过滤', ge.length ? ge[0].names[0] : '(缺失)')
     ok(Object.keys(T.GARG_TOMBSTONE).length === 11, '对照表覆盖 11 个巨人', String(Object.keys(T.GARG_TOMBSTONE).length))
   }
 

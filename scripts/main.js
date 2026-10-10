@@ -120,10 +120,16 @@ const TARGETS = [
   { key: 'iceImmune', label: '雪人小鬼/宝藏雪人·免疫冰冻', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setFreeze'], mode: 'iceImmune' },
   { key: 'iceImmune', label: '雪人小鬼/宝藏雪人·免疫减速', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setChill'], mode: 'iceImmune' },
   // ── 10. 国王：出场期间生成「隐形小鬼」，打死它即可拦截国王 ──
-  { key: 'kingIntercept', label: '国王·可被拦截', names: ['DarkKingZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['onLaneSpawnSettled', 'specialGridZombieOnEnable'], mode: 'kingIntercept' },
+  // 1.2.3：国王改挂基类。DarkKingZombie 一旦定位不到就整条失效，
+  // 这里同时对 Zombie 与 GridZombie 两个基类各挂一次，谁在就用谁。
+  { key: 'kingIntercept', label: '国王·可被拦截(Zombie)', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['onLaneSpawnSettled'], mode: 'kingIntercept' },
+  { key: 'kingIntercept', label: '国王·可被拦截(GridZombie)', names: ['GridZombie'], module: 'chunks:///_virtual/GridZombie.ts', methods: ['onLaneSpawnSettled'], mode: 'kingIntercept' },
   // ── 2. 巨人死后留下对应世界的墓碑/障碍物 ──
   // 挂巨人基类，21 个巨人都继承它；是否留下、留什么由 codename 查表决定。
-  { key: 'gargTomb', label: '巨人死后·留下墓碑/障碍物', names: ['GargantuarZombie'], module: 'chunks:///_virtual/GargantuarZombie.ts', methods: ['playDie', 'judgeDeath', 'onDamagedToHealth0'], mode: 'gargTomb' },
+  // 1.2.3：改挂 `Zombie` 基类的 playDie。
+  // 之前挂 `GargantuarZombie`，那个类一旦定位不到就整条静默失效；
+  // 改挂基类后任何僵尸死亡都会经过这里，再用 ZombieSort 过滤出巨人。
+  { key: 'gargTomb', label: '巨人死后·留下墓碑/障碍物', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['playDie'], mode: 'gargTomb' },
 ]
 
 /* ────────────────────── 基础设施 ────────────────────── */
@@ -462,10 +468,17 @@ function handlerIceImmune(entry, thisArg, args, callNext) {
  *   · 生成僵尸走 `inLnC.SpawnZombie(zombieEnum, styleEnum)`（引擎里 `bowlingInfiNut`
  *     就是这么生成护盾的），另有 `SpawnZombieByZombieType(type, style, ...)` 的写法。
  */
+/** 该僵尸是不是国王 —— 用 codename 判定，兼容亚瑟王等变体 */
+function isKingZombie(z) {
+  try {
+    const code = zombieCodename(z)
+    return !!(code && /^dark_king/.test(code))
+  } catch (e) { return false }
+}
 function handlerKingIntercept(entry, thisArg, args, callNext) {
   const r = callNext(...args)
   try {
-    if (thisArg && !thisArg.__zfaKingGuarded) {
+    if (thisArg && isKingZombie(thisArg) && !thisArg.__zfaKingGuarded) {
       thisArg.__zfaKingGuarded = true
       summonKingGuardian(thisArg)
     }
@@ -573,8 +586,15 @@ function handlerGargTomb(entry, thisArg, args, callNext) {
 /** 用 ID 反查僵尸 codename；拿不到返回 null（不影响原死亡流程） */
 function zombieCodename(z) {
   try {
+    if (!z) return null
+
+    // 兜底优先：实例或数据上直接带 codename 的，不必依赖 engine
+    if (typeof z.CODENAME === 'string' && z.CODENAME) return z.CODENAME
+    if (z.objdataOwn && typeof z.objdataOwn.CODENAME === 'string') return z.objdataOwn.CODENAME
+    if (z.objdataOwnOrg && typeof z.objdataOwnOrg.CODENAME === 'string') return z.objdataOwnOrg.CODENAME
+
     const engine = activeCtx && activeCtx.engine
-    if (!engine || !z) return null
+    if (!engine) return null
 
     // 1.2.0 起改多路探测：模块路径与导出名都试一遍，避免单点失败导致整条静默失效
     for (const [modPath, exportName] of [
@@ -587,11 +607,6 @@ function zombieCodename(z) {
         if (feat && feat.CODENAME) return feat.CODENAME
       }
     }
-
-    // 兜底：僵尸实例或它自己的数据上可能直接带着 codename
-    if (typeof z.CODENAME === 'string' && z.CODENAME) return z.CODENAME
-    if (z.objdataOwn && typeof z.objdataOwn.CODENAME === 'string') return z.objdataOwn.CODENAME
-    if (z.objdataOwnOrg && typeof z.objdataOwnOrg.CODENAME === 'string') return z.objdataOwnOrg.CODENAME
 
     return null
   } catch (err) { return null }
@@ -610,9 +625,21 @@ function tombstoneFor(code) {
   return null
 }
 
+/** 该僵尸是不是巨人 —— 引擎给巨人的实例与数据上都打了 `ZombieSort = "Gargantuar"` */
+function isGargantuar(z) {
+  try {
+    if (!z) return false
+    if (z.ZombieSort === 'Gargantuar') return true
+    if (z.objdataOwn && z.objdataOwn.ZombieSort === 'Gargantuar') return true
+    if (z.objdataOwnOrg && z.objdataOwnOrg.ZombieSort === 'Gargantuar') return true
+    const code = zombieCodename(z)
+    return !!(code && /_gargantuar$/.test(code))
+  } catch (e) { return false }
+}
 /** 查表决定留什么，再交给引擎放置 */
 function dropGargantuarTombstone(z) {
   try {
+    if (!isGargantuar(z)) return false     // 非巨人直接跳过，不写日志
     const code = zombieCodename(z)
     if (!code) {
       note('巨人墓碑：拿不到 codename（ID=' + (z && z.ID) + '），本条跳过')
@@ -1055,6 +1082,8 @@ export const __test__ = {
   installGuardianDeathHook,
   handlerGargTomb,
   dropGargantuarTombstone,
+  isGargantuar,
+  isKingZombie,
   tombstoneFor,
   zombieCodename,
   GARG_TOMBSTONE,
