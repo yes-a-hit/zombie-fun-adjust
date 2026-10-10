@@ -24,6 +24,10 @@
   数据里这是两只不同的僵尸（`iceage_imp` 雪人小鬼 / `iceage_weasel` 冰鼬），
   两只一并处理：把引擎的冰冻下发口 `Zombie.setFreeze()` 与
   减速下发口 `Zombie.setChill()` 对它们拦掉。
+- **蜻蜓护甲血量由 350 削到 90**。蜻蜓僵尸背上驮着的那只蜻蜓才是「防具」，
+  引擎里它的血量字段是 `BugToughness`（僵尸本体是 `Toughness` = 190）。
+  四个变体（`lostcity_bug` / `_armor1` / `_armor2` / `_armor4`）一并下调，
+  走数据补丁。
 
 ### 移除
 

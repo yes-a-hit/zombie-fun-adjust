@@ -25,10 +25,16 @@ export function runPackage({ pkgRoot }) {
 
   // ── 数据补丁：小鬼血量 ──
   const props = JSON.parse(readFileSync(at('jsons/objects/ZombieProps.json'), 'utf8'))
-  ok(props.objects.length === 18, '血量补丁共 18 条', String(props.objects.length))
+  const impEntries = props.objects.filter((o) => o.objdata && o.objdata.Toughness !== undefined)
+  const bugEntries = props.objects.filter((o) => o.objdata && o.objdata.BugToughness !== undefined)
+  ok(props.objects.length === 22, '血量补丁共 22 条（18 小鬼 + 4 蜻蜓护甲）', String(props.objects.length))
   ok(props.objects.every((o) => o.objclass === 'ZombieProperties'), 'objclass 全部为 ZombieProperties')
-  ok(props.objects.every((o) => o.objdata && o.objdata.Toughness === 95),
-    '全部 Toughness = 95', JSON.stringify(props.objects.filter((o) => o.objdata?.Toughness !== 95).map((o) => o.aliases[0])))
+  ok(impEntries.length === 18 && impEntries.every((o) => o.objdata.Toughness === 95),
+    '18 条小鬼全部 Toughness = 95',
+    JSON.stringify(impEntries.filter((o) => o.objdata.Toughness !== 95).map((o) => o.aliases[0])))
+  ok(bugEntries.length === 4 && bugEntries.every((o) => o.objdata.BugToughness === 90),
+    '4 条蜻蜓护甲全部 BugToughness = 90（原 350）',
+    JSON.stringify(bugEntries.map((o) => `${o.aliases[0]}=${o.objdata.BugToughness}`)))
 
   const names = props.objects.map((o) => o.aliases[0])
   const mustHave = ['tutorial_imp', 'egypt_imp', 'future_imp', 'lostcity_imp', 'dino_imp', 'sky_imp']
