@@ -104,6 +104,9 @@ const TARGETS = [
   // 场上没目标（空 A）时钩子根本不跑，扔小鬼自然也就没发生。
   // `specialGargantuarUpdate` 是舞台效果期间的每帧入口，无论砸不砸都跑。
   { key: 'gargantuarAoe', label: '重金属巨人·舞台效果改为扔小鬼', names: ['EightiesGargantuarZombie'], module: 'chunks:///_virtual/EightiesGargantuarZombie.ts', methods: ['specialGargantuarUpdate'], mode: 'jamThrow' },
+  // 1.2.1：音波必须一并拦掉，否则改挂每帧更新之后音波又回来了。
+  // 引擎里音波本来也只在 isInJam 期间射出，所以整体拦掉 onSmashing 即可。
+  { key: 'gargantuarMute', label: '重金属巨人·移除音波斩', names: ['EightiesGargantuarZombie'], module: 'chunks:///_virtual/EightiesGargantuarZombie.ts', methods: ['onSmashing'], mode: 'block' },
   { key: 'arcadeSummon', label: '街机游戏机·召唤自扣血+禁铁桶', names: ['EightiesArcadeCabinet'], module: 'chunks:///_virtual/EightiesArcadeCabinet.ts', methods: ['specialTombUpdate'], mode: 'arcade' },
   { key: 'glitterSpike', label: '轮滑（闪耀）·地刺秒杀', names: ['EightiesGlitterZombie', 'EightiesGlitterZombieZombie'], module: 'chunks:///_virtual/EightiesGlitterZombie.ts', methods: ['whenStabbedBySpikeWeed'], mode: 'spike' },
   { key: 'breakdancerKick', label: '霹雳舞·一次只踢一只+自扣50', names: ['EightiesBreakDancerZombie', 'EightiesBreakDancerZombieZombie'], module: 'chunks:///_virtual/EightiesBreakDancerZombie.ts', methods: ['kick'], mode: 'kick' },
@@ -130,7 +133,7 @@ const TARGETS = [
   // 照抄火龙小鬼 dark_imp_dragon：extraDamageScale 返回 0 即完全免疫该伤害类型。
   { key: 'electricImmune', label: '万圣节小鬼/弗兰肯斯坦·免疫电击', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['extraDamageScale'], mode: 'electricImmune' },
   // ── 10. 国王：出场期间生成「隐形小鬼」，打死它即可拦截国王 ──
-  { key: 'kingIntercept', label: '国王·可被拦截', names: ['DarkKingZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['onLaneSpawnSettled'], mode: 'kingIntercept' },
+  { key: 'kingIntercept', label: '国王·可被拦截', names: ['DarkKingZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['onLaneSpawnSettled', 'specialGridZombieOnEnable'], mode: 'kingIntercept' },
   // ── 2. 巨人死后留下对应世界的墓碑/障碍物 ──
   // 挂巨人基类，21 个巨人都继承它；是否留下、留什么由 codename 查表决定。
   { key: 'gargTomb', label: '巨人死后·留下墓碑/障碍物', names: ['GargantuarZombie'], module: 'chunks:///_virtual/GargantuarZombie.ts', methods: ['playDie', 'judgeDeath', 'onDamagedToHealth0'], mode: 'gargTomb' },
@@ -140,7 +143,7 @@ const TARGETS = [
 const diagLines = []
 const notedOnce = new Set()
 const resolved = new Map()
-const stats = { jamThrows: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, electricImmune: 0, kingGuards: 0, kingIntercepts: 0, gargTombs: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
+const stats = { jamThrows: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, electricImmune: 0, blocked: 0, kingGuards: 0, kingIntercepts: 0, gargTombs: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
 
 let activeCtx = null
 
@@ -292,6 +295,13 @@ function selfHit(z, amount) {
 
 /* ────────────────────── 各条行为 ────────────────────── */
 
+/** 2. 重金属巨人：拦掉音波斩（舞台效果期间由扔小鬼取代） */
+function handlerBlock(entry, thisArg, args, callNext) {
+  stats.blocked += 1
+  noteOnce('aoe', '已拦截重金属巨人的音波斩（普通砸击保留）')
+  return undefined
+}
+
 /**
  * 2+5. 重金属巨人：舞台效果（Jam）期间持续扔小鬼。
  *
@@ -383,7 +393,7 @@ function handlerEmpDrop(entry, thisArg, args, callNext) {
 function handlerPixelDrain(entry, thisArg, args, callNext) {
   const r = callNext(...args)
   try {
-    if (thisArg && thisArg.ID === PIXEL_ZOMBIE_ID && !thisArg.dead) {
+    if (thisArg && isPixelZombie(thisArg) && !thisArg.dead) {
       const dt = Number(args[0]) || 0
       thisArg.__zfaDrain = (thisArg.__zfaDrain || 0) + dt
       while (thisArg.__zfaDrain >= 1) {
@@ -396,6 +406,22 @@ function handlerPixelDrain(entry, thisArg, args, callNext) {
     noteOnce('pixeldrain', '像素僵尸自扣血失败：' + errText(err))
   }
   return r
+}
+
+/**
+ * 像素僵尸判定。
+ *
+ * 1.2.0 之前只看 `ID === 334`，但那依赖 ZombieEnum 的编号稳定 ——
+ * 一旦对不上就整条静默失效。现在**同时**接受 ID 与 codename 两条依据。
+ */
+function isPixelZombie(z) {
+  try {
+    if (z.ID === PIXEL_ZOMBIE_ID) return true
+    const code = zombieCodename(z)
+    return code === 'eighties_8bit'
+      || code === 'eighties_8bit_armor1'
+      || code === 'eighties_8bit_armor2'
+  } catch (e) { return false }
 }
 
 /**
@@ -498,25 +524,26 @@ function summonKingGuardian(king) {
   try {
     const lnc = king.inLnC
     if (!lnc || typeof lnc.SpawnZombie !== 'function') {
-      noteOnce('kingnolane', '国王拦截：拿不到 inLnC.SpawnZombie，本条不生效')
+      note('国王拦截：inLnC 或 SpawnZombie 不可用（lnc=' + !!lnc
+        + '，SpawnZombie=' + !!(lnc && lnc.SpawnZombie) + '），本条不生效')
       return
     }
     Promise.resolve(
       lnc.SpawnZombie(CFG.kingGuardianImpType, CFG.kingGuardianSpawnStyle)
     ).then((list) => {
       const imp = list && list[0]
-      if (!imp) { noteOnce('kingnoimp', '国王拦截：守护小鬼没有生成出来'); return }
+      if (!imp) { note('国王拦截：守护小鬼没有生成出来（返回 ' + JSON.stringify(list) + '）'); return }
       imp.__zfaKingGuardianFor = king
       king.__zfaKingGuardian = imp
       applyGhostLook(imp)
       installGuardianDeathHook(imp)
       stats.kingGuards += 1
-      logLine(null, `国王拦截：已生成守护小鬼（类型 ${CFG.kingGuardianImpType}，透明度 ${CFG.kingGuardianOpacity}）`)
+      note(`国王拦截：已生成守护小鬼（ID ${imp.ID}，类型 ${CFG.kingGuardianImpType}）`)
     }).catch((err) => {
-      noteOnce('kingguardfail', '国王拦截：小鬼生成失败 ' + errText(err))
+      note('国王拦截：小鬼生成失败 ' + errText(err))
     })
   } catch (err) {
-    noteOnce('kingguard', '国王拦截：生成流程异常 ' + errText(err))
+    note('国王拦截：生成流程异常 ' + errText(err))
   }
 }
 
@@ -641,22 +668,29 @@ function dropGargantuarTombstone(z) {
       return
     }
 
-    const Square = REFS.Square
-    if (!Square || typeof Square.placeTomb !== 'function') {
-      note('巨人墓碑：拿不到 Square.placeTomb（Square=' + !!Square + '），跳过')
-      return
-    }
     const lane = z.inLnC
     if (!lane) {
       note('巨人墓碑：' + code + ' 拿不到 inLnC（车道），跳过')
       return
     }
-    const cIndex = typeof z.cIndexReal === 'number'
-      ? z.cIndexReal
-      : (typeof z.cIndex === 'number' ? z.cIndex : 0)
-    Square.placeTomb(lane.LaneIndex, cIndex, tomb, false, false, false, false)
+    if (typeof lane.SpawnTomb !== 'function') {
+      note('巨人墓碑：车道对象上没有 SpawnTomb，跳过')
+      return
+    }
+
+    // 1.2.1：改用 `lane.SpawnTomb(type, ...)`。
+    // 引擎里冲浪板 / 音响 / 功夫TNT 都是走这条路生成的
+    // （`SpawnTomb` 13 处调用，`Square.placeTomb` 只有 4 处），
+    // 而且它返回障碍物实例，可以直接设朝向。
+    Promise.resolve(lane.SpawnTomb(tomb, false, false, false)).then((inst) => {
+      if (!inst) { noteOnce('gargtombnull', '巨人墓碑：SpawnTomb 没返回实例'); return }
+      try { inst.scale = z.reversed ? -1 : 1 } catch (e) { /* 设不了就保持默认 */ }
+      try { inst.hypnotized = !!z.hypnotized } catch (e) { /* 同上 */ }
+    }).catch((err) => {
+      noteOnce('gargtombspawn', '巨人墓碑：SpawnTomb 失败 ' + errText(err))
+    })
     stats.gargTombs += 1
-    note(`巨人墓碑：${code} 死后在第 ${lane.LaneIndex} 行第 ${cIndex} 列留下 ${tomb}`)
+    note(`巨人墓碑：${code} 死后留在第 ${lane.LaneIndex} 行的 ${tomb}`)
   } catch (err) {
     noteOnce('gargtombplace', '巨人墓碑：放置失败 ' + errText(err))
   }
@@ -788,6 +822,8 @@ function makeHandler(entry) {
       switch (entry.mode) {
         case 'jamThrow':
           return handlerJamThrowImp(entry, thisArg, args, callNext)
+        case 'block':
+          return handlerBlock(entry, thisArg, args, callNext)
         case 'empDrop':
           return handlerEmpDrop(entry, thisArg, args, callNext)
         case 'pixelDrain':
@@ -1054,6 +1090,7 @@ export const __test__ = {
   installHook,
   locateClass,
   handlerJamThrowImp,
+  handlerBlock,
   handlerEmpDrop,
   handlerPixelDrain,
   handlerIceImmune,
