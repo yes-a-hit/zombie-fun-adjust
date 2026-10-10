@@ -122,6 +122,67 @@ export function runZombies({ T, mod }) {
     ok(!empEntries.some((t) => /Zomboss/i.test(t.names[0])), '僵王不在目标之内')
   }
 
+  // ─────────────────────── 6. 像素僵尸 ───────────────────────
+
+  section('6. 像素僵尸 · 每秒自扣 10 血（无视防具）')
+
+  {
+    const entry = { key: 'pixelDrain', label: 't', names: ['Zombie'], module: 'm', methods: ['characterUpdate'], mode: 'pixelDrain' }
+
+    // ① 累计满 1 秒才扣一次
+    const z = new FakeZombie({ ID: T.PIXEL_ZOMBIE_ID })
+    const c1 = callCtx(z, [0.5])
+    T.handlerPixelDrain(entry, z, [0.5], c1.ctx.callNext)
+    ok(z.damageTaken.length === 0, '不足 1 秒不扣血')
+    const c2 = callCtx(z, [0.6])
+    T.handlerPixelDrain(entry, z, [0.6], c2.ctx.callNext)
+    ok(z.damageTaken.length === 1, '累计满 1 秒扣一次')
+    ok(z.damageTaken[0] === 10, '每次扣 10 点', String(z.damageTaken[0]))
+    ok(T.stats.pixelTicks === 1, '结算计数 +1', String(T.stats.pixelTicks))
+
+    // ② 其它僵尸完全不受影响
+    const other = new FakeZombie({ ID: 999 })
+    const c3 = callCtx(other, [5])
+    T.handlerPixelDrain(entry, other, [5], c3.ctx.callNext)
+    ok(other.damageTaken.length === 0, '非像素僵尸不受影响')
+
+    // ③ 已死亡的僵尸不再结算
+    const dead = new FakeZombie({ ID: T.PIXEL_ZOMBIE_ID, dead: true })
+    const c4 = callCtx(dead, [5])
+    T.handlerPixelDrain(entry, dead, [5], c4.ctx.callNext)
+    ok(dead.damageTaken.length === 0, '已死亡的僵尸不再结算')
+
+    // ④ 无视防具：伤害对象必须带 armorProtection = false
+    const probe = new FakeZombie({ ID: T.PIXEL_ZOMBIE_ID })
+    let seen = null
+    probe.dealDamage = (d) => { seen = d }
+    T.selfHitIgnoreArmor(probe, 10)
+    ok(seen !== null, '破防伤害已结算')
+    ok(seen && seen.armorProtection === false,
+      '标记为无视防具（armorProtection=false → defaultDealDamage 直接打主体）')
+    ok(seen && seen.damage === 10, '伤害值为 10', String(seen && seen.damage))
+    T.stats.pixelTicks = 0
+
+    // ⑤ 原实现照常放行
+    const z5 = new FakeZombie({ ID: T.PIXEL_ZOMBIE_ID })
+    const c5 = callCtx(z5, [0.1])
+    T.handlerPixelDrain(entry, z5, [0.1], c5.ctx.callNext)
+    ok(c5.calls.length === 1, 'characterUpdate 原实现被放行')
+
+    // ⑥ 缺 ZombieDamageDetails 时不抛异常
+    T.setRefs({ ZombieDamageDetails: null })
+    let threw = false
+    try { T.selfHitIgnoreArmor(probe, 10) } catch (e) { threw = true }
+    ok(!threw, '缺依赖时不抛异常')
+    T.setRefs(makeRefs())
+
+    // ⑦ 挂载点必须是 characterUpdate（不被僵尸子类覆写的那一个）
+    const pe = T.TARGETS.find((t) => t.mode === 'pixelDrain')
+    ok(!!pe && pe.methods[0] === 'characterUpdate',
+      '挂在 Zombie.characterUpdate 上', pe ? pe.methods.join(',') : '(缺失)')
+    ok(T.PIXEL_ZOMBIE_ID === 334, '像素僵尸 ID = 334（eighties_8bit）', String(T.PIXEL_ZOMBIE_ID))
+  }
+
   // ─────────────────────── 3. 街机游戏机 ───────────────────────
 
   section('3. 街机 · 摘掉像素铁桶 + 召唤自扣')

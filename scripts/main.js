@@ -29,8 +29,12 @@ const CFG = {
   breakdancerKickSelfHit: 50, // 霹雳舞每踢一次自扣（需求指定 50）
   octopusThrowSelfHit: 150, // 章鱼每扔一次自扣（需求指定 150）
   jesterRotateSelfHitPerSec: 20, // 弄臣旋转时每秒掉血
+  pixelZombieSelfHitPerSec: 10, // 6. 像素僵尸每秒自扣（无视防具）
   selfKillDamage: 999999, // 「自杀」用的致死伤害
 }
+
+/** 像素僵尸的 ID —— 取自 Zombies.ts 的 ZombieEnum（eighties_8bit = 334） */
+const PIXEL_ZOMBIE_ID = 334
 
 /** 每个类：定位名候选 + 模块路径 + 要包的方法 + 行为模式 */
 const TARGETS = [
@@ -50,13 +54,17 @@ const TARGETS = [
   { key: 'empSky', label: '脉冲黄桃·双体战斗机(下)', names: ['SkyTwinLowerZombie'], module: 'chunks:///_virtual/SkyTwinLowerZombie.ts', methods: ['empStun'], mode: 'empDrop' },
   { key: 'empSky', label: '脉冲黄桃·无人机', names: ['SkyDroneZombie'], module: 'chunks:///_virtual/SkyDroneZombie.ts', methods: ['empStun'], mode: 'empDrop' },
   { key: 'empSky', label: '脉冲黄桃·裁决者', names: ['SkyArbiterXZombie'], module: 'chunks:///_virtual/SkyArbiterXZombie.ts', methods: ['empStun'], mode: 'empDrop' },
+  // ── 6. 像素僵尸：每秒自扣 10 血，无视防具 ──
+  // eighties_8bit 是 ZombieEnum 值（334），没有专属引擎类，只能按 ID 过滤。
+  // 挂 Zombie.prototype.characterUpdate —— 该入口不被任何僵尸子类覆写。
+  { key: 'pixelDrain', label: '像素僵尸·每秒自扣10（破防）', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['characterUpdate'], mode: 'pixelDrain' },
 ]
 
 /* ────────────────────── 基础设施 ────────────────────── */
 const diagLines = []
 const notedOnce = new Set()
 const resolved = new Map()
-const stats = { jamThrows: 0, empDrops: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
+const stats = { jamThrows: 0, empDrops: 0, pixelTicks: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
 
 let activeCtx = null
 
@@ -268,6 +276,53 @@ function handlerEmpDrop(entry, thisArg, args, callNext) {
   }
 }
 
+/**
+ * 6. 像素僵尸：每秒扣 10 血，**无视防具**。
+ *
+ * 引擎依据：
+ *   · `eighties_8bit` 是 ZombieEnum 值（334），没有专属引擎类 —— 只能按 ID 过滤。
+ *   · `Zombie.prototype.characterUpdate` 不被任何僵尸子类覆写，
+ *     是唯一每帧对所有僵尸都执行的入口。
+ *   · `defaultDealDamage` 里若 `t.armorProtection` 为假，就直接扣主体 `health`、
+ *     完全绕过防具 —— 这就是"无视防具"的正统写法。
+ */
+function handlerPixelDrain(entry, thisArg, args, callNext) {
+  const r = callNext(...args)
+  try {
+    if (thisArg && thisArg.ID === PIXEL_ZOMBIE_ID && !thisArg.dead) {
+      const dt = Number(args[0]) || 0
+      thisArg.__zfaDrain = (thisArg.__zfaDrain || 0) + dt
+      while (thisArg.__zfaDrain >= 1) {
+        thisArg.__zfaDrain -= 1
+        selfHitIgnoreArmor(thisArg, CFG.pixelZombieSelfHitPerSec)
+        stats.pixelTicks += 1
+      }
+    }
+  } catch (err) {
+    noteOnce('pixeldrain', '像素僵尸自扣血失败：' + errText(err))
+  }
+  return r
+}
+
+/**
+ * 无视防具的固定伤害。
+ * 关键：把 `armorProtection` 置假，`defaultDealDamage` 就会跳过防具、直接扣 `health`。
+ */
+function selfHitIgnoreArmor(z, amount) {
+  try {
+    const ZDD = REFS.ZombieDamageDetails
+    if (!ZDD) return false
+    const d = new ZDD(amount, false, false, false, null)
+    d.damage = amount
+    d.armorProtection = false      // ← 绕过防具的关键
+    z.dealDamage(d)
+    return true
+  } catch (err) {
+    noteOnce('ignorearmor', '破防伤害结算失败：' + errText(err))
+    return false
+  }
+}
+
 /** 3. 街机游戏机：摘掉像素铁桶 + 每次召唤自扣血 */
 function handlerArcade(entry, thisArg, args, callNext) {
   let flag = null
@@ -396,6 +451,8 @@ function makeHandler(entry) {
           return handlerJamThrowImp(entry, thisArg, args, callNext)
         case 'empDrop':
           return handlerEmpDrop(entry, thisArg, args, callNext)
+        case 'pixelDrain':
+          return handlerPixelDrain(entry, thisArg, args, callNext)
         case 'arcade':
           return handlerArcade(entry, thisArg, args, callNext)
         case 'spike':
@@ -651,6 +708,9 @@ export const __test__ = {
   locateClass,
   handlerJamThrowImp,
   handlerEmpDrop,
+  handlerPixelDrain,
+  selfHitIgnoreArmor,
+  PIXEL_ZOMBIE_ID,
   handlerArcade,
   handlerSpike,
   handlerKick,
