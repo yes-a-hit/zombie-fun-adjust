@@ -183,6 +183,50 @@ export function runZombies({ T, mod }) {
     ok(T.PIXEL_ZOMBIE_ID === 334, '像素僵尸 ID = 334（eighties_8bit）', String(T.PIXEL_ZOMBIE_ID))
   }
 
+  // ─────────────────────── 7. 冰河小鬼 / 冰鼬 ───────────────────────
+
+  section('7. 冰河小鬼 / 冰鼬 · 免疫冰系')
+
+  {
+    const entry = { key: 'iceImmune', label: 't', names: ['Zombie'], module: 'm', methods: ['setFreeze'], mode: 'iceImmune' }
+
+    // ① 两只目标僵尸的冰冻入口都被拦下
+    for (const [id, name] of [[228, '冰鼬'], [229, '雪人小鬼']]) {
+      const z = new FakeZombie({ ID: id })
+      const { ctx, calls } = callCtx(z, [8, true])
+      const r = T.handlerIceImmune(entry, z, [8, true], ctx.callNext)
+      ok(r === undefined, `${name}（ID ${id}）被拦下，不会进入冻结`)
+      ok(calls.length === 0, `${name} 的原 setFreeze 未执行`)
+    }
+    ok(T.stats.iceImmune === 2, '免疫计数 +2', String(T.stats.iceImmune))
+
+    // ② 其它僵尸照常被冻
+    const other = new FakeZombie({ ID: 1 })
+    const c2 = callCtx(other, [8, true])
+    const r2 = T.handlerIceImmune(entry, other, [8, true], c2.ctx.callNext)
+    ok(c2.calls.length === 1 && r2 === 'NEXT', '其它僵尸照常冻结')
+
+    // ③ 减速入口同样被拦
+    const z3 = new FakeZombie({ ID: 228 })
+    const c3 = callCtx(z3, [5])
+    T.handlerIceImmune(entry, z3, [5], c3.ctx.callNext)
+    ok(c3.calls.length === 0, 'setChill（减速）入口同样被拦')
+
+    // ④ 异常安全
+    const boom = new FakeZombie()
+    Object.defineProperty(boom, 'ID', { get() { throw new Error('boom') } })
+    let threw = false
+    try { T.handlerIceImmune(entry, boom, [], callCtx(boom).ctx.callNext) } catch (e) { threw = true }
+    ok(!threw, 'ID 读取抛错时不外泄')
+
+    // ⑤ 挂载表：冰冻与减速两个入口各一条
+    const ice = T.TARGETS.filter((t) => t.mode === 'iceImmune')
+    ok(ice.length === 2, '冰冻与减速各一条挂载', String(ice.length))
+    const methods = ice.map((t) => t.methods[0]).sort().join(',')
+    ok(methods === 'setChill,setFreeze', '挂的是 setFreeze + setChill', methods)
+    ok(T.ICE_IMMUNE_IDS.join(',') === '228,229', '免疫名单 = 冰鼬 228 + 雪人小鬼 229', T.ICE_IMMUNE_IDS.join(','))
+  }
+
   // ─────────────────────── 3. 街机游戏机 ───────────────────────
 
   section('3. 街机 · 摘掉像素铁桶 + 召唤自扣')

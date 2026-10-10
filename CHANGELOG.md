@@ -20,6 +20,10 @@
   （它是 `ZombieEnum` 值 334），因此按 ID 过滤，挂在**不被任何僵尸子类覆写**的
   `Zombie.characterUpdate` 上；伤害借 `armorProtection = false`
   让 `defaultDealDamage` 跳过防具、直接扣主体血量。
+- **冰河小鬼与冰鼬完全免疫冰系控制**。需求写作「冰河小鬼（冰鼬）」，
+  数据里这是两只不同的僵尸（`iceage_imp` 雪人小鬼 / `iceage_weasel` 冰鼬），
+  两只一并处理：把引擎的冰冻下发口 `Zombie.setFreeze()` 与
+  减速下发口 `Zombie.setChill()` 对它们拦掉。
 
 ### 移除
 

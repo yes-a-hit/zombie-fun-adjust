@@ -36,6 +36,15 @@ const CFG = {
 /** 像素僵尸的 ID —— 取自 Zombies.ts 的 ZombieEnum（eighties_8bit = 334） */
 const PIXEL_ZOMBIE_ID = 334
 
+/**
+ * 免疫冰系的僵尸 ID（同样取自 ZombieEnum）：
+ *   228 = iceage_weasel（冰鼬）
+ *   229 = iceage_imp（雪人小鬼）
+ * 需求里写作「冰河小鬼（冰鼬）」，而数据里这是**两只不同的僵尸**，
+ * 因此两只一并免疫。
+ */
+const ICE_IMMUNE_IDS = [228, 229]
+
 /** 每个类：定位名候选 + 模块路径 + 要包的方法 + 行为模式 */
 const TARGETS = [
   { key: 'gargantuarAoe', label: '重金属巨人·舞台效果改为扔小鬼', names: ['EightiesGargantuarZombie'], module: 'chunks:///_virtual/EightiesGargantuarZombie.ts', methods: ['onSmashing'], mode: 'jamThrow' },
@@ -58,13 +67,16 @@ const TARGETS = [
   // eighties_8bit 是 ZombieEnum 值（334），没有专属引擎类，只能按 ID 过滤。
   // 挂 Zombie.prototype.characterUpdate —— 该入口不被任何僵尸子类覆写。
   { key: 'pixelDrain', label: '像素僵尸·每秒自扣10（破防）', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['characterUpdate'], mode: 'pixelDrain' },
+  // ── 7. 冰河小鬼 / 冰鼬：完全免疫冰系控制 ──
+  { key: 'iceImmune', label: '冰河小鬼/冰鼬·免疫冰冻', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setFreeze'], mode: 'iceImmune' },
+  { key: 'iceImmune', label: '冰河小鬼/冰鼬·免疫减速', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setChill'], mode: 'iceImmune' },
 ]
 
 /* ────────────────────── 基础设施 ────────────────────── */
 const diagLines = []
 const notedOnce = new Set()
 const resolved = new Map()
-const stats = { jamThrows: 0, empDrops: 0, pixelTicks: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
+const stats = { jamThrows: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
 
 let activeCtx = null
 
@@ -323,6 +335,26 @@ function selfHitIgnoreArmor(z, amount) {
   }
 }
 
+/**
+ * 7. 冰河小鬼 / 冰鼬：完全免疫冰系控制。
+ *
+ * 引擎依据：
+ *   · `Zombie.setFreeze(seconds, flag)` 是冰冻的统一下发口，内部会按
+ *     `objdataOwn.ChillInsteadOfFreeze` 或 `flying` 决定走减速还是真冰冻。
+ *   · `Zombie.setChill(seconds)` 是减速的下发口。
+ *   · 两个入口都定义在 `Zombie.prototype` 上。
+ *   ⇒ 对目标僵尸把这两个入口直接拦掉，即「完全免疫冰系」。
+ */
+function handlerIceImmune(entry, thisArg, args, callNext) {
+  try {
+    if (thisArg && ICE_IMMUNE_IDS.indexOf(thisArg.ID) >= 0) {
+      stats.iceImmune += 1
+      return undefined          // 拦掉 —— 不进冰冻、也不进减速
+    }
+  } catch (err) { /* 读不到 ID 就放行 */ }
+  return callNext(...args)
+}
+
 /** 3. 街机游戏机：摘掉像素铁桶 + 每次召唤自扣血 */
 function handlerArcade(entry, thisArg, args, callNext) {
   let flag = null
@@ -453,6 +485,8 @@ function makeHandler(entry) {
           return handlerEmpDrop(entry, thisArg, args, callNext)
         case 'pixelDrain':
           return handlerPixelDrain(entry, thisArg, args, callNext)
+        case 'iceImmune':
+          return handlerIceImmune(entry, thisArg, args, callNext)
         case 'arcade':
           return handlerArcade(entry, thisArg, args, callNext)
         case 'spike':
@@ -709,8 +743,10 @@ export const __test__ = {
   handlerJamThrowImp,
   handlerEmpDrop,
   handlerPixelDrain,
+  handlerIceImmune,
   selfHitIgnoreArmor,
   PIXEL_ZOMBIE_ID,
+  ICE_IMMUNE_IDS,
   handlerArcade,
   handlerSpike,
   handlerKick,
