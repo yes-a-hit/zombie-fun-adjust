@@ -19,49 +19,44 @@
  *     ⇒ 换成「只挑一只」，踢到一只后自己掉 50 血。
  *  6. 麦克说唱家：甩麦走 specialAnimationListener 的 "attack" 事件 → attack()（JamAttackDamage=2001）。
  *     ⇒ 在 attack 之后把自己打死。
- *  7. 失落巨人：它自带 ignited（火把状态，默认 true，被冰冻/减速会熄灭）与 FireDamage；
- *     沙漠探险家的焚烧是 detectPlantWithTorch：对 plantDetectorRec 内的植物/墓碑按 FireDPS×dt 施加 fire 伤害。
- *     ⇒ 每帧只要 ignited，就对身前矩形内的植物/墓碑施加同样的 fire 伤害（无需攻击动作）。
  *  8. 章鱼：投掷在 specialAnimationListener 的 "throw" 事件 → _throw()。
  *     ⇒ _throw 之后自扣 150。
  *  9. 弄臣：specialZombieUpdate 里维护 rotating 状态。
  *     ⇒ rotating 期间按秒持续掉血。
- * 10. 未来三只（机甲路障 / 机甲橄榄球盔 / 巨尸统领者）：死亡统一走基类 Zombie.playDie()。
- *     ⇒ 在 playDie 前对半径 1 格内的植物结算一次爆炸伤害（一次性）。
  */
 const CFG = {
   arcadeSummonSelfHit: 100, // 街机柜每召唤一次小怪，自己掉多少血（需求未给数值，这里取 100）
   breakdancerKickSelfHit: 50, // 霹雳舞每踢一次自扣（需求指定 50）
   octopusThrowSelfHit: 150, // 章鱼每扔一次自扣（需求指定 150）
-  jesterRotateSelfHitPerSec: 20, // 弄臣旋转时每秒掉血（1.0.1：按主人要求从 30 下调到 20）
-  explosionDamage: 1800, // 未来三只自爆伤害（需求未给数值，这里取爆炸级 1800）
-  explodeRangeSquares: 2, // 自爆范围：以自身为中心、宽 2 格（即半径 1 格）
-  burnDPS: 1000, // 失落巨人焚烧 DPS，与沙漠探险家的 FireDPS 一致
+  jesterRotateSelfHitPerSec: 20, // 弄臣旋转时每秒掉血
   selfKillDamage: 999999, // 「自杀」用的致死伤害
 }
 
 /** 每个类：定位名候选 + 模块路径 + 要包的方法 + 行为模式 */
 const TARGETS = [
-  { key: 'gargantuarAoe', label: '重金属巨人·音波 AOE', names: ['EightiesGargantuarZombie'], module: 'chunks:///_virtual/EightiesGargantuarZombie.ts', methods: ['onSmashing'], mode: 'block' },
+  { key: 'gargantuarAoe', label: '重金属巨人·舞台效果改为扔小鬼', names: ['EightiesGargantuarZombie'], module: 'chunks:///_virtual/EightiesGargantuarZombie.ts', methods: ['onSmashing'], mode: 'jamThrow' },
   { key: 'arcadeSummon', label: '街机游戏机·召唤自扣血+禁铁桶', names: ['EightiesArcadeCabinet'], module: 'chunks:///_virtual/EightiesArcadeCabinet.ts', methods: ['specialTombUpdate'], mode: 'arcade' },
   { key: 'glitterSpike', label: '轮滑（闪耀）·地刺秒杀', names: ['EightiesGlitterZombie', 'EightiesGlitterZombieZombie'], module: 'chunks:///_virtual/EightiesGlitterZombie.ts', methods: ['whenStabbedBySpikeWeed'], mode: 'spike' },
   { key: 'breakdancerKick', label: '霹雳舞·一次只踢一只+自扣50', names: ['EightiesBreakDancerZombie', 'EightiesBreakDancerZombieZombie'], module: 'chunks:///_virtual/EightiesBreakDancerZombie.ts', methods: ['kick'], mode: 'kick' },
   { key: 'mcSelfKill', label: '麦克说唱家·甩完麦自杀', names: ['EightiesMCZombie'], module: 'chunks:///_virtual/EightiesMCZombie.ts', methods: ['attack'], mode: 'selfHitAfter', hit: 'selfKillDamage' },
   { key: 'octopusSelfHit', label: '章鱼僵尸·投掷自扣150', names: ['BeachOctopusZombie'], module: 'chunks:///_virtual/BeachOctopusZombie.ts', methods: ['_throw'], mode: 'selfHitAfter', hit: 'octopusThrowSelfHit' },
-  { key: 'lostGargBurn', label: '失落巨人·火把持续焚烧', names: ['LostcityGargantuarZombie'], module: 'chunks:///_virtual/LostcityGargantuarZombie.ts', methods: ['specialGargantuarUpdate'], mode: 'burn' },
   { key: 'jesterRotate', label: '弄臣·旋转持续掉血', names: ['DarkJesterZombie'], module: 'chunks:///_virtual/DarkJesterZombie.ts', methods: ['specialZombieUpdate'], mode: 'rotate' },
-  // 未来三只：死亡入口多路挂（playDie=统一死亡、judgeDeath=死亡动画、onDamagedToHealth0=血量归零），
-  // 三条共用同一个「已炸」标记，谁先到谁炸，一关只炸一次。
-  { key: 'futureBomb', label: '未来三只·死后自爆', names: ['FutureMechConeZombie'], module: 'chunks:///_virtual/FutureMechConeZombie.ts', methods: ['playDie', 'judgeDeath', 'onDamagedToHealth0'], mode: 'bomb' },
-  { key: 'futureBomb', label: '未来三只·死后自爆', names: ['FutureMechFootballZombie'], module: 'chunks:///_virtual/FutureMechFootballZombie.ts', methods: ['playDie', 'judgeDeath', 'onDamagedToHealth0'], mode: 'bomb' },
-  { key: 'futureBomb', label: '未来三只·死后自爆', names: ['FutureGargantuarZombie'], module: 'chunks:///_virtual/FutureGargantuarZombie.ts', methods: ['playDie', 'judgeDeath', 'onDamagedToHealth0'], mode: 'bomb' },
+  // ── 1. 脉冲黄桃：瘫痪并强制落地所有飞机（僵王除外）──
+  // 基类 Zombie.empStun 是空函数，全引擎只有 12 处覆写，飞行僵尸里仅无人机有份。
+  // 这里把五类飞机全部补上覆盖，落地靠 flying=false 触发 onLanding()。
+  { key: 'empSky', label: '脉冲黄桃·小鬼飞机', names: ['SkyImpZombie'], module: 'chunks:///_virtual/SkyImpZombie.ts', methods: ['empStun'], mode: 'empDrop' },
+  { key: 'empSky', label: '脉冲黄桃·单体战斗机', names: ['SkyBattlePlaneZombie'], module: 'chunks:///_virtual/SkyBattlePlaneZombie.ts', methods: ['empStun'], mode: 'empDrop' },
+  { key: 'empSky', label: '脉冲黄桃·双体战斗机(上)', names: ['SkyTwinUpperZombie'], module: 'chunks:///_virtual/SkyTwinUpperZombie.ts', methods: ['empStun'], mode: 'empDrop' },
+  { key: 'empSky', label: '脉冲黄桃·双体战斗机(下)', names: ['SkyTwinLowerZombie'], module: 'chunks:///_virtual/SkyTwinLowerZombie.ts', methods: ['empStun'], mode: 'empDrop' },
+  { key: 'empSky', label: '脉冲黄桃·无人机', names: ['SkyDroneZombie'], module: 'chunks:///_virtual/SkyDroneZombie.ts', methods: ['empStun'], mode: 'empDrop' },
+  { key: 'empSky', label: '脉冲黄桃·裁决者', names: ['SkyArbiterXZombie'], module: 'chunks:///_virtual/SkyArbiterXZombie.ts', methods: ['empStun'], mode: 'empDrop' },
 ]
 
 /* ────────────────────── 基础设施 ────────────────────── */
 const diagLines = []
 const notedOnce = new Set()
 const resolved = new Map()
-const stats = { blocked: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, burns: 0, rotateTicks: 0, bombs: 0, explodeHits: 0, lastExplode: '' }
+const stats = { jamThrows: 0, empDrops: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
 
 let activeCtx = null
 
@@ -213,11 +208,64 @@ function selfHit(z, amount) {
 
 /* ────────────────────── 各条行为 ────────────────────── */
 
-/** 2. 重金属巨人：拦掉音波 AOE（普通砸击在 _smash 里，不受影响） */
-function handlerBlock(entry, thisArg, args, callNext) {
-  stats.blocked += 1
-  noteOnce('aoe', '已拦截重金属巨人的音波 AOE（普通砸击保留）')
-  return undefined
+/**
+ * 2+5. 重金属巨人：舞台效果（Jam）期间，把原本的空 A 改成直接扔小鬼。
+ *
+ * 音波原本是在 `onSmashing` 里射出的（`shootOnePea(WaveType)`，投射物 1000 伤害）。
+ * 现在只要处于舞台效果期间，就改为扔小鬼、**且不受「每巨人一只」的限制**。
+ *
+ * 引擎依据：
+ *   · `EightiesGargantuarProps.ImpType = "eighties_imp"` —— 小鬼类型现成
+ *   · 基类 `GargantuarZombie` 提供 `throwImpNow()` / `haveImp` / `getImpColumn()`
+ *   · `isInJam` 为真 = 处于舞台效果期间
+ */
+function handlerJamThrowImp(entry, thisArg, args, callNext) {
+  try {
+    if (thisArg && typeof thisArg.throwImpNow === 'function') {
+      let inJam = false
+      try { inJam = thisArg.isInJam === true } catch (e) { /* 读不到就按非舞台处理 */ }
+      if (inJam) {
+        // 「无限小鬼」的关键：每次投掷前把 haveImp 补满，
+        // 绕过基类「一个巨人只带一只小鬼」的限制
+        try { thisArg.haveImp = true } catch (e) { /* 写不进就交给引擎自己判断 */ }
+        thisArg.throwImpNow()
+        stats.jamThrows += 1
+        return undefined          // 不再射音波 —— 空 A 变成扔鬼
+      }
+    }
+  } catch (err) {
+    noteOnce('jamthrow', '舞台效果扔小鬼失败：' + errText(err))
+  }
+  return callNext(...args)        // 非舞台期间保持普通砸击与原行为
+}
+
+/**
+ * 1. 脉冲黄桃：瘫痪并**强制落地**（僵王除外）。
+ *
+ * 引擎依据：
+ *   · 基类 `Zombie.empStun` 是空函数，全引擎只有 12 处覆写；
+ *     飞行僵尸里**只有 `SkyDroneZombie`** 有（内容是 `playDie()`）。
+ *     ⇒ 其余四类飞机原本对脉冲黄桃完全免疫，这正是本条要补的缺口。
+ *   · `flying` 是带副作用的访问器：从 true 变 false 会触发
+ *     `onLanding()` → `specialZombieOnLandingForced()` —— 这就是"强制落地"。
+ *   · `SkyImpZombie` 自带样例：`playSpecialZombieDieForced() { this.flying = false }`。
+ *
+ * 注意：僵王（`ZombossMechZombie` / `SkyZombossMechZombie`）不在目标之列。
+ */
+function handlerEmpDrop(entry, thisArg, args, callNext) {
+  try {
+    const r = callNext(...args)      // 先放行原实现（无人机在这一步就已经 playDie）
+    try {
+      if (thisArg && thisArg.flying === true) {
+        thisArg.flying = false       // 强制落地 → onLanding() → specialZombieOnLandingForced()
+        stats.empDrops += 1
+      }
+    } catch (e) { /* 读不到 flying 就只瘫痪、不落地 */ }
+    return r
+  } catch (err) {
+    noteOnce('empstun', '脉冲瘫痪失败：' + errText(err))
+    return callNext(...args)
+  }
 }
 
 /** 3. 街机游戏机：摘掉像素铁桶 + 每次召唤自扣血 */
@@ -326,64 +374,6 @@ function makeSelfHitAfter(entry) {
   }
 }
 
-/** 7. 失落巨人：火把点着时，无需攻击也持续焚烧身前的植物/墓碑 */
-function handlerBurn(entry, thisArg, args, callNext) {
-  const ret = callNext(...args)
-  try {
-    const dt = Number(args && args[0])
-    if (!(dt > 0) || !thisArg.ignited) return ret
-    const ZDD = REFS.ZombieDamageDetails
-    if (!ZDD) return ret
-
-    let rec = null
-    try {
-      rec = thisArg.plantDetectorRec
-    } catch (err) {
-      rec = null
-    }
-    if (!rec) {
-      const { w, h } = squareSize()
-      rec = makeRect(thisArg.worldPositionX + (thisArg.reversed ? -1 : 1) * w * 0.5, thisArg.worldPositionY, w, h)
-    }
-    if (!rec) return ret
-
-    const dmg = CFG.burnDPS * dt
-    const fire = REFS.ZombieDamageType ? REFS.ZombieDamageType.fire : undefined
-    const details = new ZDD(dmg, true, false, false, null, fire)
-    let hit = 0
-    try {
-      const lane = thisArg.inLane
-      if (lane && typeof lane.plantPool === 'function') {
-        lane.plantPool().forEach((p) => {
-          try {
-            if (p && p.bodyRec && rec.judgeCrossRec(p.bodyRec)) {
-              p.dealDamage(details)
-              hit += 1
-            }
-          } catch (err) {}
-        })
-      }
-      if (lane && typeof lane.tombPool === 'function') {
-        lane.tombPool(thisArg.hypnotized ? 0 : 1).forEach((t) => {
-          try {
-            if (t && t.bodyRec && rec.judgeCrossRec(t.bodyRec)) {
-              t.dealDamage(details)
-              hit += 1
-            }
-          } catch (err) {}
-        })
-      }
-    } catch (err) {
-      noteOnce('burn', '焚烧结算失败：' + errText(err))
-    }
-    if (hit) stats.burns += hit
-  } catch (err) {
-    noteOnce('burnouter', '焚烧钩子异常：' + errText(err))
-  }
-  return ret
-}
-
-/** 9. 弄臣：旋转期间持续掉血 */
 function handlerRotate(entry, thisArg, args, callNext) {
   const ret = callNext(...args)
   try {
@@ -398,94 +388,14 @@ function handlerRotate(entry, thisArg, args, callNext) {
   return ret
 }
 
-/** 10. 未来三只：死亡瞬间自爆，半径 1 格（多路触发，共用「已炸」标记） */
-function handlerBomb(entry, thisArg, args, callNext) {
-  try {
-    if (thisArg && !thisArg.__funAdjustBombed) {
-      thisArg.__funAdjustBombed = true
-      explodePlants(thisArg, entry)
-    }
-  } catch (err) {
-    noteOnce('bomb', '自爆失败：' + errText(err))
-  }
-  return callNext(...args)
-}
-
-/**
- * 三层降级，任一层成功即可：
- *   ① 引擎矩形（Rectangle.createRectangleCenter + judgeCrossRec，与功夫自爆僵尸同一套）
- *   ② 距离近似：|植物.x − 自身.x| ≤ 一格（不需要 Rectangle）
- *   ③ 横向距离 + 同一行（plantPool 拿不到时用 entities 之类的兜底就不写了，直接报诊断）
- * 每次尝试都会往日志写一行，实机没炸时日志能直接指出卡在哪一层。
- */
-function explodePlants(z, entry) {
-  const ZDD = REFS.ZombieDamageDetails
-  const label = (entry && entry.label) || '未来三只'
-  if (!ZDD) {
-    logLine(null, `${label} 自爆未执行：没拿到 ZombieDamageDetails`)
-    return
-  }
-
-  const { w, h } = squareSize()
-  let lane = null
-  try {
-    lane = z.inLane || null
-  } catch (err) {
-    lane = null
-  }
-  let midY = z.worldPositionY
-  try {
-    if (lane && typeof lane.midY === 'number') midY = lane.midY
-  } catch (err) {}
-
-  const halfW = (CFG.explodeRangeSquares * w) / 2
-  const rec = makeRect(z.worldPositionX, midY, CFG.explodeRangeSquares * w, h)
-
-  let pool = null
-  try {
-    if (lane && typeof lane.plantPool === 'function') pool = lane.plantPool()
-  } catch (err) {
-    noteOnce('explodepool', '取植物池失败：' + errText(err))
-  }
-  if (!Array.isArray(pool)) {
-    logLine(null, `${label} 自爆未执行：拿不到 inLane.plantPool()（lane=${lane ? '有' : '空'}）`)
-    return
-  }
-
-  const details = new ZDD(CFG.explosionDamage, true, true, true, null)
-  let hit = 0
-  let path = rec ? '引擎矩形' : '距离近似'
-  let missed = 0
-  for (const p of pool) {
-    try {
-      if (!p || !p.bodyRec) continue
-      let inside = false
-      if (rec && typeof rec.judgeCrossRec === 'function') inside = !!rec.judgeCrossRec(p.bodyRec)
-      else if (typeof p.worldPositionX === 'number') inside = Math.abs(p.worldPositionX - z.worldPositionX) <= halfW
-      if (!inside) {
-        missed += 1
-        continue
-      }
-      p.dealDamage(details)
-      hit += 1
-    } catch (err) {
-      noteOnce('explodehit', '爆炸对植物结算失败：' + errText(err))
-    }
-  }
-
-  stats.bombs += 1
-  stats.explodeHits += hit
-  stats.lastExplode = `${label} 命中 ${hit} 株（路径=${path}，场上植物 ${pool.length} 株）`
-  logLine(null, `自爆：${label} 命中 ${hit} 株植物（路径=${path}，半径 ${CFG.explodeRangeSquares / 2} 格，伤害 ${CFG.explosionDamage}；场上植物 ${pool.length} 株${missed ? '，范围外 ' + missed + ' 株' : ''}）`)
-}
-
-/* ────────────────────── 钩子装配 ────────────────────── */
 function makeHandler(entry) {
   return function ({ thisArg, args, callNext }) {
     try {
       switch (entry.mode) {
-        case 'block':
-          return handlerBlock(entry, thisArg, args, callNext)
+        case 'jamThrow':
+          return handlerJamThrowImp(entry, thisArg, args, callNext)
+        case 'empDrop':
+          return handlerEmpDrop(entry, thisArg, args, callNext)
         case 'arcade':
           return handlerArcade(entry, thisArg, args, callNext)
         case 'spike':
@@ -494,12 +404,8 @@ function makeHandler(entry) {
           return handlerKick(entry, thisArg, args, callNext)
         case 'selfHitAfter':
           return makeSelfHitAfter(entry)(thisArg, args, callNext)
-        case 'burn':
-          return handlerBurn(entry, thisArg, args, callNext)
         case 'rotate':
           return handlerRotate(entry, thisArg, args, callNext)
-        case 'bomb':
-          return handlerBomb(entry, thisArg, args, callNext)
         default:
           return callNext(...args)
       }
@@ -567,8 +473,6 @@ function describeStats() {
     `地刺秒杀 ${stats.spikeKills}`,
     `踢击 ${stats.kicks}`,
     `自杀/自扣 ${stats.selfHits}`,
-    `焚烧命中 ${stats.burns}`,
-    `自爆 ${stats.bombs}（炸到植物 ${stats.explodeHits}）`,
   ].join(' · ')
 }
 
@@ -576,7 +480,6 @@ function dumpDiagnostics(ctx) {
   ctx.log.info('[僵尸调整] ---- 诊断 ----')
   for (let i = 0; i < diagLines.length; i++) ctx.log.info('[僵尸调整] ' + diagLines[i])
   ctx.log.info('[僵尸调整] 统计：' + describeStats())
-  if (stats.lastExplode) ctx.log.info('[僵尸调整] 最近一次自爆：' + stats.lastExplode)
   ctx.log.info('[僵尸调整] ---- 诊断结束 ----')
 }
 
@@ -605,13 +508,12 @@ function definePanel(ctx) {
           title: '触发统计',
           items: [
             { type: 'readonly', key: 'stats', label: '累计', getValue: () => describeStats() },
-            { type: 'readonly', key: 'lastExplode', label: '最近一次自爆', getValue: () => stats.lastExplode || '还没触发过' },
             {
               type: 'readonly',
               key: 'cfg',
               label: '可调数值',
               getValue: () =>
-                `街机召唤自扣 ${CFG.arcadeSummonSelfHit} · 踢击自扣 ${CFG.breakdancerKickSelfHit} · 章鱼自扣 ${CFG.octopusThrowSelfHit} · 弄臣 ${CFG.jesterRotateSelfHitPerSec}/秒 · 自爆 ${CFG.explosionDamage}（半径 ${CFG.explodeRangeSquares / 2} 格）`,
+                `街机召唤自扣 ${CFG.arcadeSummonSelfHit} · 踢击自扣 ${CFG.breakdancerKickSelfHit} · 章鱼自扣 ${CFG.octopusThrowSelfHit} · 弄臣 ${CFG.jesterRotateSelfHitPerSec}/秒`,
             },
           ],
         },
@@ -747,15 +649,13 @@ export const __test__ = {
   makeHandler,
   installHook,
   locateClass,
-  handlerBlock,
+  handlerJamThrowImp,
+  handlerEmpDrop,
   handlerArcade,
   handlerSpike,
   handlerKick,
-  handlerBurn,
   handlerRotate,
-  handlerBomb,
   makeSelfHitAfter,
-  explodePlants,
   selfHit,
   setRefs(refs) { Object.assign(REFS, refs || {}) },
   getRefs() { return REFS },

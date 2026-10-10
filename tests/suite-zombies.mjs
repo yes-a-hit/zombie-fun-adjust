@@ -23,31 +23,103 @@ export function runZombies({ T, mod }) {
   ok(T.CFG.breakdancerKickSelfHit === 50, '霹雳舞自扣 = 50', String(T.CFG.breakdancerKickSelfHit))
   ok(T.CFG.octopusThrowSelfHit === 150, '章鱼自扣 = 150', String(T.CFG.octopusThrowSelfHit))
   ok(T.CFG.jesterRotateSelfHitPerSec === 20, '弄臣旋转 = 20/秒（1.0.1 由 30 下调）', String(T.CFG.jesterRotateSelfHitPerSec))
-  ok(T.CFG.burnDPS === 1000, '焚烧 DPS = 1000（对齐沙漠探险家）', String(T.CFG.burnDPS))
-  ok(T.CFG.explosionDamage === 1800, '自爆伤害 = 1800', String(T.CFG.explosionDamage))
-  ok(T.CFG.explodeRangeSquares === 2, '自爆范围 = 2 格（半径 1 格）', String(T.CFG.explodeRangeSquares))
   ok(T.CFG.arcadeSummonSelfHit > 0, '街机召唤自扣为正数')
 
-  ok(T.TARGETS.length === 11, '挂载表 11 条（9 个类 + 未来三只拆 3 条）', String(T.TARGETS.length))
   ok(T.TARGETS.every((t) => t.names && t.names.length && (t.methods || t.method)), '每条都有类名与方法名')
-  const bombEntries = T.TARGETS.filter((t) => t.mode === 'bomb')
-  ok(bombEntries.length === 3, '未来三只各占一条', String(bombEntries.length))
-  ok(bombEntries.every((t) => t.methods.length === 3), '未来三只各挂 3 个死亡入口')
-  ok(bombEntries.every((t) => t.methods.includes('playDie') && t.methods.includes('judgeDeath') && t.methods.includes('onDamagedToHealth0')),
-    '三个死亡入口名称正确')
-
   // ─────────────────────── 2. 重金属巨人 ───────────────────────
 
-  section('2. 重金属巨人 · 移除音波 AOE')
+  section('2+5. 重金属巨人 · 舞台效果改为扔小鬼')
 
   {
     const entry = find('gargantuarAoe')
-    const z = new FakeZombie()
+
+    // ① 舞台效果期间：扔小鬼，不再射音波
+    const z = new FakeZombie({ isInJam: true, haveImp: false })
+    let throws = 0
+    z.throwImpNow = () => { throws += 1 }
     const { ctx, calls } = callCtx(z)
-    const r = T.handlerBlock(entry, z, [{ name: 'smash' }], ctx.callNext)
-    ok(r === undefined, '拦截后返回 undefined（不吃掉原实现的返回值）')
-    ok(calls.length === 0, '没有调用 callNext，音波不会射出')
-    ok(T.stats.blocked === 1, '拦截计数 +1', String(T.stats.blocked))
+    const r = T.handlerJamThrowImp(entry, z, [{ name: 'smash' }], ctx.callNext)
+    ok(r === undefined, '舞台期间返回 undefined（不吃掉原实现的返回值）')
+    ok(calls.length === 0, '没有调用 callNext —— 音波不再射出')
+    ok(throws === 1, '扔出一次小鬼')
+    ok(z.haveImp === true, '投掷前把 haveImp 补满（「无限小鬼」的关键）')
+    ok(T.stats.jamThrows === 1, '扔鬼计数 +1', String(T.stats.jamThrows))
+
+    // ② 非舞台效果期间：保持原行为，普通砸击分毫不动
+    const z2 = new FakeZombie({ isInJam: false })
+    let throws2 = 0
+    z2.throwImpNow = () => { throws2 += 1 }
+    const c2 = callCtx(z2)
+    const r2 = T.handlerJamThrowImp(entry, z2, [], c2.ctx.callNext)
+    ok(throws2 === 0, '非舞台期间不扔小鬼')
+    ok(c2.calls.length === 1 && r2 === 'NEXT', '非舞台期间放行原实现')
+
+    // ③ 数量不限：连着来 5 次都扔得出去
+    const z3 = new FakeZombie({ isInJam: true })
+    let n = 0
+    z3.throwImpNow = () => { n += 1 }
+    for (let i = 0; i < 5; i++) {
+      T.handlerJamThrowImp(entry, z3, [], callCtx(z3).ctx.callNext)
+    }
+    ok(n === 5, '连续 5 次全部扔出（不受每巨人一只的限制）', String(n))
+
+    // ④ 异常安全：缺接口 / isInJam 抛错时都放行原实现
+    const plain = new FakeZombie()
+    let threw = false
+    try { T.handlerJamThrowImp(entry, plain, [], callCtx(plain).ctx.callNext) } catch (e) { threw = true }
+    ok(!threw, '缺少 throwImpNow 时不抛异常')
+
+    const boom = new FakeZombie()
+    Object.defineProperty(boom, 'isInJam', { get() { throw new Error('boom') } })
+    let threw2 = false
+    try { T.handlerJamThrowImp(entry, boom, [], callCtx(boom).ctx.callNext) } catch (e) { threw2 = true }
+    ok(!threw2, 'isInJam 读取抛错时不外泄')
+
+    ok(T.stats.blocked === undefined, '旧的「拦截音波」统计已移除')
+  }
+
+  // ─────────────────────── 1. 脉冲黄桃 ───────────────────────
+
+  section('1. 脉冲黄桃 · 瘫痪并强制落地飞机')
+
+  {
+    const entry = { key: 'empSky', label: '测试机', names: ['X'], module: 'm', methods: ['empStun'], mode: 'empDrop' }
+
+    // ① 正在飞的：强制落地（flying 由 true 变 false 会触发 onLanding）
+    const z = new FakeZombie({ flying: true })
+    const { ctx } = callCtx(z)
+    T.handlerEmpDrop(entry, z, [10], ctx.callNext)
+    ok(z.flying === false, '飞行中的僵尸被强制落地')
+    ok(T.stats.empDrops === 1, '落地计数 +1', String(T.stats.empDrops))
+
+    // ② 已经在地面的：不重复计数
+    const z2 = new FakeZombie({ flying: false })
+    const c2 = callCtx(z2)
+    T.handlerEmpDrop(entry, z2, [10], c2.ctx.callNext)
+    ok(z2.flying === false, '地面上的僵尸保持原状')
+    ok(T.stats.empDrops === 1, '落地计数不再增加')
+
+    // ③ 原实现照常放行（无人机的 empStun 就是 playDie）
+    const z3 = new FakeZombie({ flying: true })
+    const c3 = callCtx(z3)
+    T.handlerEmpDrop(entry, z3, [10], c3.ctx.callNext)
+    ok(c3.calls.length === 1, '原 empStun 实现被放行')
+    ok(c3.calls[0][0] === 10, '原实现拿到同样的时长参数', String(c3.calls[0][0]))
+
+    // ④ 异常安全：flying 读取抛错也不外泄
+    const boom = new FakeZombie()
+    Object.defineProperty(boom, 'flying', { get() { throw new Error('boom') } })
+    let threw = false
+    try { T.handlerEmpDrop(entry, boom, [], callCtx(boom).ctx.callNext) } catch (e) { threw = true }
+    ok(!threw, 'flying 读取抛错时不外泄')
+
+    // ⑤ 挂载表里五类飞机都在，且僵王不在
+    const empEntries = T.TARGETS.filter((t) => t.mode === 'empDrop')
+    ok(empEntries.length === 6, '六条飞机挂载（双体拆上下）', String(empEntries.length))
+    const labels = empEntries.map((t) => t.label).join(' ')
+    ok(/小鬼飞机/.test(labels) && /战斗机/.test(labels) && /无人机/.test(labels) && /裁决者/.test(labels),
+      '小鬼飞机 / 战斗机 / 无人机 / 裁决者 均已覆盖', labels)
+    ok(!empEntries.some((t) => /Zomboss/i.test(t.names[0])), '僵王不在目标之内')
   }
 
   // ─────────────────────── 3. 街机游戏机 ───────────────────────
@@ -189,51 +261,6 @@ export function runZombies({ T, mod }) {
 
   // ─────────────────────── 7. 失落巨人 ───────────────────────
 
-  section('7. 失落巨人 · 火把持续焚烧')
-
-  {
-    const entry = find('lostGargBurn')
-    const w = 68
-    // 巨人朝右，身前一格内放一株植物、一株在范围外
-    const near = new FakePlant(134, 40)
-    const far = new FakePlant(400, 40)
-    const tombNear = new FakePlant(140, 40)
-    const lane = makeLane({ plants: [near, far], tombs: [tombNear] })
-    const z = new FakeZombie({
-      ignited: true,
-      reversed: false,
-      worldPositionX: 100,
-      worldPositionY: 40,
-      inLane: lane,
-    })
-
-    const { ctx } = callCtx(z, [1.0])
-    T.handlerBurn(entry, z, [1.0], ctx.callNext)
-
-    ok(near.damageTaken.length > 0, '身前植物被烧到')
-    ok(Math.abs(near.damageTaken[0] - 1000) < 1e-6, '每秒 1000 火焰伤害', String(near.damageTaken[0]))
-    ok(far.damageTaken.length === 0, '范围外的植物不受影响')
-    ok(tombNear.damageTaken.length > 0, '墓碑同样被烧')
-
-    // 火把熄灭 → 不烧
-    const p2 = new FakePlant(134, 40)
-    const lane2 = makeLane({ plants: [p2] })
-    const z2 = new FakeZombie({ ignited: false, worldPositionX: 100, worldPositionY: 40, inLane: lane2 })
-    const c2 = callCtx(z2, [1.0])
-    T.handlerBurn(entry, z2, [1.0], c2.ctx.callNext)
-    ok(p2.damageTaken.length === 0, '火把熄灭后停止焚烧')
-
-    // dt 为 0 不结算
-    const p3 = new FakePlant(134, 40)
-    const lane3 = makeLane({ plants: [p3] })
-    const z3 = new FakeZombie({ ignited: true, worldPositionX: 100, worldPositionY: 40, inLane: lane3 })
-    const c3 = callCtx(z3, [0])
-    T.handlerBurn(entry, z3, [0], c3.ctx.callNext)
-    ok(p3.damageTaken.length === 0, 'dt 为 0 时不结算')
-  }
-
-  // ─────────────────────── 9. 弄臣 ───────────────────────
-
   section('9. 弄臣 · 旋转期间持续掉血')
 
   {
@@ -257,83 +284,12 @@ export function runZombies({ T, mod }) {
     ok(z3.damageTaken.length === 0, '未旋转时不掉血')
   }
 
-  // ─────────────────────── 10. 未来三只自爆 ───────────────────────
-
-  section('10. 未来三只 · 死亡自爆')
-
-  {
-    const entry = find('futureBomb', 'FutureMechConeZombie')
-    const inside = new FakePlant(120, 40)
-    const edge = new FakePlant(160, 40)      // dx=60 ≤ 68/2*2/2=68 → 命中
-    const outside = new FakePlant(200, 40)   // dx=100 > 68 → 范围外
-    const lane = makeLane({ plants: [inside, edge, outside] })
-    const z = new FakeZombie({ worldPositionX: 100, worldPositionY: 40, inLane: lane })
-
-    const { ctx, calls } = callCtx(z)
-    T.handlerBomb(entry, z, [], ctx.callNext)
-    ok(calls.length === 1, '原死亡流程照常执行')
-    ok(inside.damageTaken[0] === 1800, '范围内植物吃满 1800', String(inside.damageTaken[0]))
-    ok(edge.damageTaken.length === 1, '半径边缘的植物也命中')
-    ok(outside.damageTaken.length === 0, '范围外植物不受影响')
-    ok(T.stats.bombs === 1, '自爆计数 +1')
-    ok(T.stats.explodeHits === 2, '命中计数 = 2', String(T.stats.explodeHits))
-
-    // 三个死亡入口可能先后触发，但同一只只能炸一次
-    T.handlerBomb(entry, z, [], ctx.callNext)
-    T.handlerBomb(entry, z, [], ctx.callNext)
-    ok(inside.damageTaken.length === 1, '同一只僵尸只炸一次（多入口去重）', String(inside.damageTaken.length))
-
-    // 另一个实例照常炸
-    const z2 = new FakeZombie({ worldPositionX: 100, worldPositionY: 40, inLane: lane })
-    const c2 = callCtx(z2)
-    T.handlerBomb(entry, z2, [], c2.ctx.callNext)
-    ok(inside.damageTaken.length === 2, '换一只僵尸可以再炸', String(inside.damageTaken.length))
-  }
-
-  section('10b. 自爆的降级路径')
-
-  {
-    const entry = find('futureBomb', 'FutureMechConeZombie')
-
-    // ① 拿不到 Rectangle → 退回「水平距离一格以内」
-    T.setRefs({ Rectangle: null })
-    const near = new FakePlant(120, 40)     // dx=20
-    const far = new FakePlant(200, 40)      // dx=100
-    const lane = makeLane({ plants: [near, far] })
-    const z = new FakeZombie({ worldPositionX: 100, worldPositionY: 40, inLane: lane })
-    const before = T.stats.bombs
-    T.handlerBomb(entry, z, [], callCtx(z).ctx.callNext)
-    ok(T.stats.bombs === before + 1, '缺 Rectangle 时仍然执行了自爆')
-    ok(near.damageTaken.length === 1, '距离近似路径命中近处植物')
-    ok(far.damageTaken.length === 0, '距离近似路径排除远处植物')
-
-    // ② 连 ZombieDamageDetails 都没有 → 不炸，但写日志、不抛异常
-    T.setRefs({ ZombieDamageDetails: null })
-    const lane2 = makeLane({ plants: [new FakePlant(120, 40)] })
-    const z2 = new FakeZombie({ worldPositionX: 100, worldPositionY: 40, inLane: lane2 })
-    let threw = false
-    const before2 = T.stats.bombs
-    try { T.handlerBomb(entry, z2, [], callCtx(z2).ctx.callNext) } catch (e) { threw = true }
-    ok(!threw, '依赖全缺时不抛异常')
-    ok(T.stats.bombs === before2, '依赖缺失时不计入自爆')
-    ok(T.getDiag().some((l) => l.includes('自爆未执行')), '写下了「自爆未执行」的诊断',
-      T.getDiag().slice(-2).join(' | '))
-
-    // ③ 拿不到植物池 → 也写日志
-    T.setRefs(makeRefs())
-    const z3 = new FakeZombie({ worldPositionX: 100, worldPositionY: 40, inLane: {} })
-    T.handlerBomb(entry, z3, [], callCtx(z3).ctx.callNext)
-    ok(T.getDiag().some((l) => l.includes('plantPool')), '拿不到 plantPool 时写明原因')
-  }
-
-  // ─────────────────────── 通用：异常安全 ───────────────────────
-
   section('11. 异常安全')
 
   {
     T.setRefs({ cc: null, Vec2: null, Rectangle: null, Square: null, ZombieDamageDetails: null, ZombieDamageType: null })
     const z = new FakeZombie()
-    const modes = ['block', 'arcade', 'spike', 'kick', 'selfHitAfter', 'burn', 'rotate', 'bomb']
+    const modes = ['block', 'arcade', 'spike', 'kick', 'selfHitAfter', 'rotate']
     let threw = 0
     for (const mode of modes) {
       const entry = { key: 'octopusSelfHit', label: 't', names: ['X'], module: 'm', methods: ['m'], mode, hit: 'octopusThrowSelfHit' }
