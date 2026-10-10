@@ -15,7 +15,7 @@ export function runPackage({ pkgRoot }) {
   // ── 清单 ──
   const packJson = JSON.parse(readFileSync(at('pack.json'), 'utf8'))
   ok(packJson.uuid === 'yg.zombie-fun-adjust', 'uuid 正确', packJson.uuid)
-  ok(packJson.version === '1.2.5', 'version = 1.2.5', packJson.version)
+  ok(packJson.version === '1.2.6', 'version = 1.2.6', packJson.version)
   ok(packJson.apiVersion === 2, 'apiVersion = 2')
   ok(packJson.js && packJson.js.startup === true, 'js.startup = true（engine 访问权前提）')
   ok(!('requiredGpNextFeatures' in packJson), '未声明 requiredGpNextFeatures（本版本会拒绝加载）')
@@ -35,6 +35,14 @@ export function runPackage({ pkgRoot }) {
   ok(bugEntries.length === 7 && bugEntries.every((o) => o.objdata.BugToughness === 90),
     '7 条蜻蜓/萤火虫护甲全部 BugToughness = 90（原 350）',
     JSON.stringify(bugEntries.map((o) => `${o.aliases[0]}=${o.objdata.BugToughness}`)))
+
+  // ── 数据补丁：植物（魔音甜菜防踢飞）──
+  const pprops = JSON.parse(readFileSync(at('jsons/objects/PlantProps.json'), 'utf8'))
+  ok(pprops.objects.length === 2, '植物补丁 2 条（魔音甜菜 + 音游甜菜）', String(pprops.objects.length))
+  ok(pprops.objects.every((o) => o.objclass === 'PlantProperties'), 'objclass 全部为 PlantProperties')
+  ok(pprops.objects.every((o) => o.objdata.CannotBePushedByFootballMech === true),
+    '魔音甜菜系列已加入防踢飞字段（与白萝卜 turnip 同一字段）',
+    JSON.stringify(pprops.objects.map((o) => o.aliases[0])))
 
   const names = props.objects.map((o) => o.aliases[0])
   const mustHave = ['tutorial_imp', 'egypt_imp', 'future_imp', 'lostcity_imp', 'dino_imp', 'sky_imp']
