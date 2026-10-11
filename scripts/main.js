@@ -35,7 +35,9 @@ const CFG = {
   kingGuardianSpawnStyle: 0, // 10. 生成风格（LnCSpawnZombieStyleEnum.appear = 0）
   kingGuardianOpacity: 0.35, // 10. 隐形程度（0 = 全透明，1 = 正常）
   jamDamageReduction: 0.5, // 2. 舞台效果期间减伤比例
-  kingVulnerableScale: 10, // 10. 国王出场动画期间的易伤倍率
+  kingVulnerableScale: 5, // 10. 国王出场期间的易伤倍率（1.2.12 由 10 下调到 5）
+  kingStageHpStaff: 200, // 10. 杖国王（dark_king）出场期间的临时血量
+  kingStageHpSword: 300, // 10. 剑国王（dark_king_veteran）出场期间的临时血量
   kingKnightSelfHit: 150, // 11. 国王每授爵一次自扣（需求指定 150）
   selfKillDamage: 999999, // 「自杀」用的致死伤害
 }
@@ -141,17 +143,10 @@ const TARGETS = [
   // ── 11. 国王：每次授爵自扣血 ──
   // `DarkKingZombie._give()` 就是「给僵尸授爵」那一趟流程（异步方法）。
   { key: 'kingKnight', label: '国王·授爵自扣150', names: ['DarkKingZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['_give'], mode: 'kingKnight' },
-  // ── 12. 运兵艇 + 国王：出场/存在期间强制拥有实体 ──
-  // 两者的 bodyRec 都被基类 setBodyRec 周期性地置成空矩形：
-  //   setBodyRec(t) {
-  //     t || this.currentFarBodyRec() || this.bodyRecHiddenCD > 0
-  //       ? this.bodyRec = new Rect()      // 空
-  //       : this.defaultSetBodyRec()
-  //   }
-  //   · 运兵艇：currentFarBodyRec() 恒为 true，且 isRealZombie = false（植物直接无视）
-  //   · 国王：出场整段 switching = true
-  // 所以必须从 setBodyRec 这一层强制走正常路径，光改 getter 不够。
-  { key: 'entityForce', label: '运兵艇 + 国王·强制拥有实体', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setBodyRec'], mode: 'entityForce' },
+  // ── 10. 国王：出场动画期间强制拥有实体 ──
+  // 出场整段 switching = true，基类 setBodyRec 会把 bodyRec 置成空矩形 —— 那才是「打不到」的真因。
+  // 在 setBodyRec 这一层强制走正常路径；落地后 __zfaKingExposed 清掉，交还引擎。
+  { key: 'entityForce', label: '国王·出场期间强制拥有实体', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setBodyRec'], mode: 'entityForce' },
   // ── 10. 国王：出场期间生成「隐形小鬼」，打死它即可拦截国王 ──
   // 1.2.3：国王改挂基类。DarkKingZombie 一旦定位不到就整条失效，
   // 这里同时对 Zombie 与 GridZombie 两个基类各挂一次，谁在就用谁。
@@ -375,6 +370,13 @@ function handlerKingExpose(entry, thisArg, args, callNext) {
       thisArg.__zfaKingExposed = true
       thisArg.bodyRecHiddenCD = 0        // 解除命中框隐藏
 
+      // 出场期间把血量上限与当前血量一起压到指定值（杖 200 / 剑 300），
+      // 落地时由 handlerKingLanded 按比例还原。记下原值备用。
+      const staged = thisArg.ID === 188 ? CFG.kingStageHpSword : CFG.kingStageHpStaff
+      thisArg.__zfaKingOrigToughness = thisArg.toughness
+      try { thisArg.toughness = staged } catch (e) { /* 只读就跳过 */ }
+      try { thisArg.health = staged } catch (e) { /* 同上 */ }
+
       // 关键：植物检测器只看 `bodyRecForShooter`，而它在 `depth > 40`（还在天上）时
       // 返回**空矩形** —— 这才是真正打不到的原因。这里把它短路成真实命中框。
       try {
@@ -409,8 +411,19 @@ function handlerKingLanded(entry, thisArg, args, callNext) {
           delete thisArg.bodyRecForShooter
         }
       } catch (e) { /* 摘不掉就留着，命中框多暴露一会儿无害 */ }
+      // 落地：恢复正常抗性（__zfaKingExposed 已清，易伤随之失效），
+      // 并把血量上限还原 —— 当前血量按出场期间的比例放大回去，避免落地瞬间被挤死。
+      const origT = thisArg.__zfaKingOrigToughness
+      if (typeof origT === 'number') {
+        const stagedT = thisArg.toughness
+        const cur = thisArg.health
+        const ratio = (typeof stagedT === 'number' && stagedT > 0 && typeof cur === 'number')
+          ? cur / stagedT : 1
+        try { thisArg.toughness = origT } catch (e) { /* 只读就跳过 */ }
+        try { thisArg.health = Math.max(1, Math.round(origT * ratio)) } catch (e) { /* 同上 */ }
+      }
       stats.kingLanded += 1
-      note('国王：已落地，易伤窗口关闭')
+      note('国王：已落地，易伤窗口关闭，恢复正常抗性与血量上限')
     }
   } catch (err) {
     noteOnce('kinglanded', '国王落地解除失败：' + errText(err))
@@ -485,62 +498,23 @@ function isDropshipZombie(z) {
 }
 
 /**
- * 12. 运兵艇 + 国王：强制拥有实体。
+ * 10. 国王：出场动画期间强制拥有实体，落地后交还引擎。
  *
- * 两者的 `bodyRec` 都被基类 `setBodyRec` 周期性地置成空矩形 —— 那才是「打不到」的真因。
- * 这里就在 `setBodyRec` 这一层动手：
- *   · 把 `switching` 压成 false（国王出场整段是 true）
- *   · 把 `currentFarBodyRec` 覆盖成 () => false（运兵艇恒返回 true）
- *   · 把 `isRealZombie` 置真（运兵艇是 false，植物连目标都不考虑它）
- *   · 最后强行 callNext(false)，绕过原实现里所有「置空」分支
+ * `bodyRec` 由基类 `setBodyRec` 周期性重算，而出场整段 `switching = true`
+ * 会让它被置成空矩形 —— 那才是「打不到」的真因。
+ * 这里在 `setBodyRec` 这一层强制 `callNext(false)`，绕过原实现的置空分支。
+ *
+ * ⚠️ 不改 `switching` 本身 —— 1.2.11 那样做过，会打断国王随后的授勋流程。
  */
 function handlerEntityForce(entry, thisArg, args, callNext) {
   try {
-    if (thisArg) {
-      const isShip = isDropshipZombie(thisArg)
-      const isKing = isKingZombie(thisArg)
-
-      if (isShip || isKing) {
-        if (isShip) {
-          thisArg.isRealZombie = true        // 植物 judgeHaveEnemy 的必要条件
-          thisArg.bodyRecHiddenCD = 0
-          if (!thisArg.__zfaShipPatched) {
-            thisArg.__zfaShipPatched = true
-            patchShipGetters(thisArg)
-            stats.dropshipsExposed += 1
-            note('运兵艇：已解除无敌（isRealZombie + currentFarBodyRec + 命中框 getter）')
-          }
-        }
-        if (isKing && thisArg.__zfaKingExposed) {
-          thisArg.bodyRecHiddenCD = 0
-          try { thisArg.switching = false } catch (e) { /* 写不进就算了 */ }
-        }
-        // 强制走正常路径：原实现会因为 switching / currentFarBodyRec 把 bodyRec 置空
-        return callNext(false)
-      }
+    if (thisArg && thisArg.__zfaKingExposed && isKingZombie(thisArg)) {
+      return callNext(false)
     }
   } catch (err) {
     noteOnce('entity', '强制实体失败：' + errText(err))
   }
   return callNext(...args)
-}
-
-/** 把运兵艇身上三个「假命中框」入口都短路到真实命中框 */
-function patchShipGetters(ship) {
-  try {
-    Object.defineProperty(ship, 'currentFarBodyRec', {
-      configurable: true,
-      value() { return false },
-    })
-  } catch (e) { /* 单个失败不阻断其它的 */ }
-  for (const key of ['bodyRecForShooter', 'bodyRecReal']) {
-    try {
-      Object.defineProperty(ship, key, {
-        configurable: true,
-        get() { return this.bodyRec },
-      })
-    } catch (e) { /* 同上 */ }
-  }
 }
 
 /**
@@ -1330,9 +1304,7 @@ export const __test__ = {
   handlerKingVuln,
   handlerKingKnight,
   handlerEntityForce,
-  patchShipGetters,
   isKingZombie,
-  isDropshipZombie,
   ICE_IMMUNE_IDS,
   handlerArcade,
   handlerSpike,
