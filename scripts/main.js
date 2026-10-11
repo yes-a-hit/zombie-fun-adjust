@@ -36,6 +36,7 @@ const CFG = {
   kingGuardianOpacity: 0.35, // 10. 隐形程度（0 = 全透明，1 = 正常）
   jamDamageReduction: 0.5, // 2. 舞台效果期间减伤比例
   kingVulnerableScale: 10, // 10. 国王出场动画期间的易伤倍率
+  kingKnightSelfHit: 150, // 11. 国王每授爵一次自扣（需求指定 150）
   selfKillDamage: 999999, // 「自杀」用的致死伤害
 }
 
@@ -137,6 +138,13 @@ const TARGETS = [
   { key: 'kingExpose', label: '国王·出场解除无敌帧', names: ['DarkKingZombie', 'GridZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['onLaneSpawnSettled'], mode: 'kingExpose' },
   { key: 'kingLanded', label: '国王·落地解除易伤', names: ['DarkKingZombie', 'GridZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['onDirtSpawned'], mode: 'kingLanded' },
   { key: 'kingVuln', label: '国王·出场期间高易伤', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['extraDamageScale'], mode: 'kingVuln' },
+  // ── 11. 国王：每次授爵自扣血 ──
+  // `DarkKingZombie._give()` 就是「给僵尸授爵」那一趟流程（异步方法）。
+  { key: 'kingKnight', label: '国王·授爵自扣150', names: ['DarkKingZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['_give'], mode: 'kingKnight' },
+  // ── 12. 运兵艇：解除无敌 ──
+  // 它的免打有两重：bodyRecForShooter（depth>40 → 空矩形）与 bodyRecReal（坐标写死 -1e4）。
+  // 在出生时把两个 getter 都短路到真实命中框。血量 4000 走数据补丁。
+  { key: 'dropshipExpose', label: '运兵艇·解除无敌', names: ['SkyDropShipZombie'], module: 'chunks:///_virtual/SkyDropShipZombie.ts', methods: ['specialZombieOnEnable'], mode: 'dropshipExpose' },
   // ── 10. 国王：出场期间生成「隐形小鬼」，打死它即可拦截国王 ──
   // 1.2.3：国王改挂基类。DarkKingZombie 一旦定位不到就整条失效，
   // 这里同时对 Zombie 与 GridZombie 两个基类各挂一次，谁在就用谁。
@@ -149,7 +157,7 @@ const TARGETS = [
 const diagLines = []
 const notedOnce = new Set()
 const resolved = new Map()
-const stats = { jamReduced: 0, aoesMuted: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, kingExposed: 0, kingLanded: 0, kingGuards: 0, kingIntercepts: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
+const stats = { jamReduced: 0, aoesMuted: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, kingExposed: 0, kingLanded: 0, kingKnights: 0, dropshipsExposed: 0, kingGuards: 0, kingIntercepts: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
 
 let activeCtx = null
 
@@ -415,6 +423,59 @@ function handlerKingVuln(entry, thisArg, args, callNext) {
     noteOnce('kingvuln', '国王易伤判定失败：' + errText(err))
   }
   return base
+}
+
+/**
+ * 11. 国王：每次授爵自扣血（国王与亚瑟王都生效）。
+ *
+ * `DarkKingZombie._give()` 就是「给僵尸授爵」那趟流程 —— 它会随机挑一条相邻行，
+ * 再挑一只通过 `zombieCanAddArmor` 的僵尸把护甲挂上去。
+ *
+ * 扣血用 `selfHitIgnoreArmor`（直接改 health 的真实伤害），
+ * 因为国王身上有一堆空实现的免伤方法，走常规伤害管线不保证生效。
+ */
+function handlerKingKnight(entry, thisArg, args, callNext) {
+  const r = callNext(...args)   // 原授爵流程照常跑（异步方法，返回 Promise）
+  try {
+    if (isKingZombie(thisArg) && !thisArg.dead) {
+      selfHitIgnoreArmor(thisArg, CFG.kingKnightSelfHit)
+      stats.kingKnights += 1
+      note('国王：授爵一次，自扣 ' + CFG.kingKnightSelfHit + ' 血')
+    }
+  } catch (err) {
+    noteOnce('kingknight', '国王授爵扣血失败：' + errText(err))
+  }
+  return r
+}
+
+/**
+ * 12. 运兵艇：解除无敌。
+ *
+ * 它的免打有两重，都藏在 getter 里：
+ *   · 基类 `bodyRecForShooter` —— `depth > 40` 时返回空矩形（它 `height_depth = 200`）
+ *   · 自己的 `bodyRecReal`    —— 坐标写死 `-1e4`，扔到地图外
+ * 两个都短路到真实命中框，植物的检测器才扫得到它。
+ */
+function handlerDropshipExpose(entry, thisArg, args, callNext) {
+  const r = callNext(...args)
+  try {
+    if (thisArg && !thisArg.__zfaShipExposed) {
+      thisArg.__zfaShipExposed = true
+      for (const key of ['bodyRecForShooter', 'bodyRecReal']) {
+        try {
+          Object.defineProperty(thisArg, key, {
+            configurable: true,
+            get() { return this.bodyRec },
+          })
+        } catch (e) { /* 单个覆盖失败不阻断另一个 */ }
+      }
+      stats.dropshipsExposed += 1
+      note('运兵艇：已解除无敌（bodyRecForShooter + bodyRecReal 均短路）')
+    }
+  } catch (err) {
+    noteOnce('ship', '运兵艇解除无敌失败：' + errText(err))
+  }
+  return r
 }
 
 /**
@@ -932,6 +993,10 @@ function makeHandler(entry) {
           return handlerKingLanded(entry, thisArg, args, callNext)
         case 'kingVuln':
           return handlerKingVuln(entry, thisArg, args, callNext)
+        case 'kingKnight':
+          return handlerKingKnight(entry, thisArg, args, callNext)
+        case 'dropshipExpose':
+          return handlerDropshipExpose(entry, thisArg, args, callNext)
         case 'gargTomb':
           return handlerGargTomb(entry, thisArg, args, callNext)
         case 'arcade':
@@ -1205,6 +1270,8 @@ export const __test__ = {
   handlerKingExpose,
   handlerKingLanded,
   handlerKingVuln,
+  handlerKingKnight,
+  handlerDropshipExpose,
   ICE_IMMUNE_IDS,
   handlerArcade,
   handlerSpike,

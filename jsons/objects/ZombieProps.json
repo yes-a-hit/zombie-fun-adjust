@@ -3,6 +3,15 @@
     {
       "objclass": "ZombieProperties",
       "aliases": [
+        "sky_dropship"
+      ],
+      "objdata": {
+        "Toughness": 4000
+      }
+    },
+    {
+      "objclass": "ZombieProperties",
+      "aliases": [
         "tutorial_imp"
       ],
       "objdata": {

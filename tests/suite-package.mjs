@@ -15,7 +15,7 @@ export function runPackage({ pkgRoot }) {
   // ── 清单 ──
   const packJson = JSON.parse(readFileSync(at('pack.json'), 'utf8'))
   ok(packJson.uuid === 'yg.zombie-fun-adjust', 'uuid 正确', packJson.uuid)
-  ok(packJson.version === '1.2.8', 'version = 1.2.8', packJson.version)
+  ok(packJson.version === '1.2.9', 'version = 1.2.9', packJson.version)
   ok(packJson.apiVersion === 2, 'apiVersion = 2')
   ok(packJson.js && packJson.js.startup === true, 'js.startup = true（engine 访问权前提）')
   ok(!('requiredGpNextFeatures' in packJson), '未声明 requiredGpNextFeatures（本版本会拒绝加载）')
@@ -25,9 +25,9 @@ export function runPackage({ pkgRoot }) {
 
   // ── 数据补丁：小鬼血量 ──
   const props = JSON.parse(readFileSync(at('jsons/objects/ZombieProps.json'), 'utf8'))
-  const impEntries = props.objects.filter((o) => o.objdata && o.objdata.Toughness !== undefined)
+  const impEntries = props.objects.filter((o) => o.objdata && o.objdata.Toughness !== undefined && o.aliases[0] !== 'sky_dropship')
   const bugEntries = props.objects.filter((o) => o.objdata && o.objdata.BugToughness !== undefined)
-  ok(props.objects.length === 25, '血量补丁共 25 条（18 小鬼 + 7 蜻蜓/萤火虫护甲）', String(props.objects.length))
+  ok(props.objects.length === 26, '血量补丁共 26 条（18 小鬼 + 7 蜻蜓/萤火虫护甲 + 运兵艇）', String(props.objects.length))
   ok(props.objects.every((o) => o.objclass === 'ZombieProperties'), 'objclass 全部为 ZombieProperties')
   ok(impEntries.length === 18 && impEntries.every((o) => o.objdata.Toughness === 95),
     '18 条小鬼全部 Toughness = 95',

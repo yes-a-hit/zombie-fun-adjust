@@ -226,6 +226,52 @@ export function runZombies({ T, mod }) {
     ok(!threw, "目标为空时不抛异常")
   }
 
+  section('13. 国王授爵自扣 + 运兵艇解除无敌')
+
+  {
+    // ── 国王授爵 ──
+    const eKnight = find('kingKnight')
+    ok(!!eKnight && eKnight.methods[0] === '_give', '授爵挂在 _give 上', eKnight ? eKnight.methods.join(',') : '(缺失)')
+    ok(T.CFG.kingKnightSelfHit === 150, 'CFG 授爵自扣 = 150', String(T.CFG.kingKnightSelfHit))
+
+    const k = new FakeZombie({ ID: 1, CODENAME: 'dark_king', health: 1000 })
+    T.handlerKingKnight(eKnight, k, [], () => Promise.resolve())
+    ok(k.health === 850, '国王授爵一次自扣 150', String(k.health))
+    ok(T.stats.kingKnights === 1, '授爵计数 +1', String(T.stats.kingKnights))
+
+    const k2 = new FakeZombie({ ID: 2, CODENAME: 'dark_king_veteran', health: 1500 })
+    T.handlerKingKnight(eKnight, k2, [], () => Promise.resolve())
+    ok(k2.health === 1350, '亚瑟王同样自扣 150', String(k2.health))
+
+    const notKing = new FakeZombie({ ID: 9, CODENAME: 'dark_imp', health: 100 })
+    T.handlerKingKnight(eKnight, notKing, [], () => Promise.resolve())
+    ok(notKing.health === 100, '非国王不受影响')
+
+    // ── 运兵艇解除无敌 ──
+    const eShip = find('dropshipExpose')
+    ok(!!eShip && eShip.methods[0] === 'specialZombieOnEnable',
+      '运兵艇挂在出生入口上', eShip ? eShip.methods.join(',') : '(缺失)')
+
+    const ship = new FakeZombie({ ID: 1, health: 4000 })
+    ship.bodyRec = { mark: 'real' }
+    T.handlerDropshipExpose(eShip, ship, [], () => undefined)
+    ok(ship.__zfaShipExposed === true, '运兵艇已标记解除无敌')
+    ok(ship.bodyRecForShooter === ship.bodyRec, 'bodyRecForShooter 已短路到真实命中框')
+    ok(ship.bodyRecReal === ship.bodyRec, 'bodyRecReal 已短路（原来是 -1e4 的假框）')
+    ok(T.stats.dropshipsExposed === 1, '解除计数 +1', String(T.stats.dropshipsExposed))
+
+    T.handlerDropshipExpose(eShip, ship, [], () => undefined)
+    ok(T.stats.dropshipsExposed === 1, '同一实例不重复处理（幂等）')
+
+    // ── 异常安全 ──
+    let t2 = false
+    try {
+      T.handlerKingKnight(eKnight, null, [], () => Promise.resolve())
+      T.handlerDropshipExpose(eShip, null, [], () => undefined)
+    } catch (e) { t2 = true }
+    ok(!t2, '目标为空时不抛异常')
+  }
+
   section('7. 雪人小鬼 / 宝藏雪人 · 免疫冰系')
 
   {
