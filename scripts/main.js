@@ -35,7 +35,6 @@ const CFG = {
   kingGuardianSpawnStyle: 0, // 10. 生成风格（LnCSpawnZombieStyleEnum.appear = 0）
   kingGuardianOpacity: 0.35, // 10. 隐形程度（0 = 全透明，1 = 正常）
   jamDamageReduction: 0.5, // 2. 舞台效果期间减伤比例
-  kingVulnerableScale: 5, // 10. 国王出场期间的易伤倍率（1.2.12 由 10 下调到 5）
   kingStageHpStaff: 200, // 10. 杖国王（dark_king）出场期间的临时血量
   kingStageHpSword: 300, // 10. 剑国王（dark_king_veteran）出场期间的临时血量
   kingKnightSelfHit: 150, // 11. 国王每授爵一次自扣（需求指定 150）
@@ -138,8 +137,9 @@ const TARGETS = [
   //   this.bodyRecHiddenCD = 2
   // 落地时 onDirtSpawned 再清零。这里把出场那段从「免打」改成「易伤窗口」。
   { key: 'kingExpose', label: '国王·出场解除无敌帧', names: ['DarkKingZombie', 'GridZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['onLaneSpawnSettled'], mode: 'kingExpose' },
-  { key: 'kingLanded', label: '国王·落地解除易伤', names: ['DarkKingZombie', 'GridZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['onDirtSpawned'], mode: 'kingLanded' },
-  { key: 'kingVuln', label: '国王·出场期间高易伤', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['extraDamageScale'], mode: 'kingVuln' },
+  // 落地回血由 entityForce 在 switching 转 false 时处理 —— 国王是 GridZombie，
+  // 出场播 Spawn 动画、不走 playDirtSpawn，所以 onDirtSpawned 永远不会被调用。
+  // 另：开场压血量已足够体现「出场虚弱」，按反馈不做易伤。
   // ── 11. 国王：每次授爵自扣血 ──
   // `DarkKingZombie._give()` 就是「给僵尸授爵」那一趟流程（异步方法）。
   { key: 'kingKnight', label: '国王·授爵自扣150', names: ['DarkKingZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['_give'], mode: 'kingKnight' },
@@ -398,53 +398,6 @@ function handlerKingExpose(entry, thisArg, args, callNext) {
   return r
 }
 
-/** 10. 国王：落地后解除易伤，恢复正常承伤 */
-function handlerKingLanded(entry, thisArg, args, callNext) {
-  const r = callNext(...args)
-  try {
-    if (thisArg && thisArg.__zfaKingExposed) {
-      thisArg.__zfaKingExposed = false
-      // 恢复：摘掉实例上覆盖的 getter，回到引擎原实现
-      try {
-        if (thisArg.__zfaKingRecPatched) {
-          thisArg.__zfaKingRecPatched = false
-          delete thisArg.bodyRecForShooter
-        }
-      } catch (e) { /* 摘不掉就留着，命中框多暴露一会儿无害 */ }
-      // 落地：恢复正常抗性（__zfaKingExposed 已清，易伤随之失效），
-      // 并把血量上限还原 —— 当前血量按出场期间的比例放大回去，避免落地瞬间被挤死。
-      const origT = thisArg.__zfaKingOrigToughness
-      if (typeof origT === 'number') {
-        const stagedT = thisArg.toughness
-        const cur = thisArg.health
-        const ratio = (typeof stagedT === 'number' && stagedT > 0 && typeof cur === 'number')
-          ? cur / stagedT : 1
-        try { thisArg.toughness = origT } catch (e) { /* 只读就跳过 */ }
-        try { thisArg.health = Math.max(1, Math.round(origT * ratio)) } catch (e) { /* 同上 */ }
-      }
-      stats.kingLanded += 1
-      note('国王：已落地，易伤窗口关闭，恢复正常抗性与血量上限')
-    }
-  } catch (err) {
-    noteOnce('kinglanded', '国王落地解除失败：' + errText(err))
-  }
-  return r
-}
-
-/** 10. 国王：出场期间承受高额伤害（倍率见 CFG.kingVulnerableScale） */
-function handlerKingVuln(entry, thisArg, args, callNext) {
-  const base = callNext(...args)
-  try {
-    if (thisArg && thisArg.__zfaKingExposed) {
-      const mul = typeof base === 'number' ? base : 1
-      return mul * CFG.kingVulnerableScale
-    }
-  } catch (err) {
-    noteOnce('kingvuln', '国王易伤判定失败：' + errText(err))
-  }
-  return base
-}
-
 /**
  * 11. 国王：每次授爵自扣血（国王与亚瑟王都生效）。
  *
@@ -509,12 +462,41 @@ function isDropshipZombie(z) {
 function handlerEntityForce(entry, thisArg, args, callNext) {
   try {
     if (thisArg && thisArg.__zfaKingExposed && isKingZombie(thisArg)) {
-      return callNext(false)
+      if (thisArg.switching) {
+        // 出场动画进行中：强制走正常路径，让它有实体。
+        return callNext(false)
+      }
+      // ⚠️ `switching` 转 false 就是「出场结束」。
+      // 国王是 GridZombie，出场播的是 `Spawn` 动画、**不走 `playDirtSpawn`** ——
+      // 所以 `onDirtSpawned` 根本不会被调用，落地必须在这里判。
+      restoreKingAfterSpawn(thisArg)
     }
   } catch (err) {
     noteOnce('entity', '强制实体失败：' + errText(err))
   }
   return callNext(...args)
+}
+
+/**
+ * 国王出场结束：把血量上限与当前血量恢复到原值，并清掉易伤标记。
+ *
+ * 需求：开场把血量压低已经够体现「出场虚弱」，所以**不做易伤**；
+ * 但既然开局被削，成功落地就应当回满 —— 否则等于白削一条命。
+ */
+function restoreKingAfterSpawn(king) {
+  try {
+    king.__zfaKingExposed = false
+    const origT = king.__zfaKingOrigToughness
+    if (typeof origT === 'number') {
+      try { king.toughness = origT } catch (e) { /* 只读就跳过 */ }
+      try { king.health = origT } catch (e) { /* 同上 */ }
+    }
+    delete king.__zfaKingOrigToughness
+    stats.kingLanded += 1
+    note('国王：出场结束，血量已回满至 ' + origT)
+  } catch (err) {
+    noteOnce('kingrestore', '国王回血失败：' + errText(err))
+  }
 }
 
 /**
@@ -1021,10 +1003,6 @@ function makeHandler(entry) {
           return handlerMuteAoe(entry, thisArg, args, callNext)
         case 'kingExpose':
           return handlerKingExpose(entry, thisArg, args, callNext)
-        case 'kingLanded':
-          return handlerKingLanded(entry, thisArg, args, callNext)
-        case 'kingVuln':
-          return handlerKingVuln(entry, thisArg, args, callNext)
         case 'kingKnight':
           return handlerKingKnight(entry, thisArg, args, callNext)
         case 'entityForce':
@@ -1300,9 +1278,9 @@ export const __test__ = {
   PIXEL_ZOMBIE_IDS,
   handlerMuteAoe,
   handlerKingExpose,
-  handlerKingLanded,
-  handlerKingVuln,
+  restoreKingAfterSpawn,
   handlerKingKnight,
+  restoreKingAfterSpawn,
   handlerEntityForce,
   isKingZombie,
   ICE_IMMUNE_IDS,

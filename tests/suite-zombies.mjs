@@ -169,64 +169,73 @@ export function runZombies({ T, mod }) {
     ok(!!pe && pe.methods[0] === "characterUpdate", "挂在 Zombie.characterUpdate 上", pe ? pe.methods.join(",") : "(缺失)")
   }
 
-  section('11. 国王 · 出场动画解除无敌帧 + 高额易伤')
+  section('11. 国王 · 出场解除无敌帧 + 开场压血量 + 落地回满')
 
   {
     const eExpose = find('kingExpose')
-    const eLanded = find('kingLanded')
-    const eVuln = find('kingVuln')
+    const eEnt = find('entityForce')
 
     // ① 挂载点
     ok(!!eExpose && eExpose.methods[0] === 'onLaneSpawnSettled', '出场挂 onLaneSpawnSettled', eExpose ? eExpose.methods.join(',') : '(缺失)')
-    ok(!!eLanded && eLanded.methods[0] === 'onDirtSpawned', '落地挂 onDirtSpawned', eLanded ? eLanded.methods.join(',') : '(缺失)')
-    ok(!!eVuln && eVuln.methods[0] === 'extraDamageScale', '易伤走 extraDamageScale', eVuln ? eVuln.methods.join(',') : '(缺失)')
+    ok(!!eEnt && eEnt.methods[0] === 'setBodyRec', '实体化挂 setBodyRec', eEnt ? eEnt.methods.join(',') : '(缺失)')
+    // 按反馈：开场压血量已足够体现「出场虚弱」，不做易伤；
+    // 落地也不再挂 onDirtSpawned —— 国王是 GridZombie，出场播 Spawn 动画、不走那条路
+    ok(T.TARGETS.every((t) => t.mode !== 'kingVuln'), '易伤条目已移除')
+    ok(T.TARGETS.every((t) => t.mode !== 'kingLanded'), 'onDirtSpawned 挂载已移除')
 
-    // ② 出场：解除命中框隐藏 + 打上易伤标记
-    const king = new FakeZombie({ ID: 1, CODENAME: 'dark_king', bodyRecHiddenCD: 2 })
-    T.handlerKingExpose(eExpose, king, [], () => undefined)
-    ok(king.bodyRecHiddenCD === 0, "出场时命中框隐藏被清零（= 解除无敌帧）", String(king.bodyRecHiddenCD))
-    ok(king.__zfaKingExposed === true, "已打上「易伤中」标记")
-    // 命中框短路 —— 植物检测器只看 bodyRecForShooter，它在 depth>40 时返回空矩形
-    ok(king.__zfaKingRecPatched === true, "bodyRecForShooter 已被短路到真实命中框")
-    ok(king.bodyRecForShooter === king.bodyRec, "bodyRecForShooter 返回真实命中框（绕过 depth>40 的空矩形）")
-    ok(T.stats.kingExposed === 1, "出场计数 +1", String(T.stats.kingExposed))
+    // ② 出场：解除命中框隐藏 + 压血量
+    const kStaff = new FakeZombie({ ID: 187, CODENAME: 'dark_king', bodyRecHiddenCD: 2, toughness: 1000, health: 1000 })
+    T.handlerKingExpose(eExpose, kStaff, [], () => undefined)
+    ok(kStaff.bodyRecHiddenCD === 0, '出场时命中框隐藏被清零（= 解除无敌帧）', String(kStaff.bodyRecHiddenCD))
+    ok(kStaff.__zfaKingExposed === true, '已打上「出场中」标记')
+    ok(kStaff.toughness === 200 && kStaff.health === 200, '杖国王出场血量压到 200/200',
+      kStaff.health + '/' + kStaff.toughness)
+    ok(kStaff.__zfaKingOrigToughness === 1000, '已记下原始血量上限 1000', String(kStaff.__zfaKingOrigToughness))
+    ok(T.stats.kingExposed === 1, '出场计数 +1', String(T.stats.kingExposed))
 
-    // ③ 易伤期间伤害放大 CFG.kingVulnerableScale 倍
-    const r1 = T.handlerKingVuln(eVuln, king, [{}], () => 1)
-    ok(r1 === T.CFG.kingVulnerableScale, `易伤期间伤害 x${T.CFG.kingVulnerableScale}`, String(r1))
-    const r2 = T.handlerKingVuln(eVuln, king, [{}], () => 0.5)
-    ok(Math.abs(r2 - 0.5 * T.CFG.kingVulnerableScale) < 1e-9, '在原有系数上再乘倍率', String(r2))
+    const kSword = new FakeZombie({ ID: 188, CODENAME: 'dark_king_veteran', toughness: 1500, health: 1500 })
+    T.handlerKingExpose(eExpose, kSword, [], () => undefined)
+    ok(kSword.toughness === 300 && kSword.health === 300, '剑国王出场血量压到 300/300',
+      kSword.health + '/' + kSword.toughness)
 
-    // ④ 落地：标记清除，易伤失效
-    T.handlerKingLanded(eLanded, king, [], () => undefined)
-    ok(king.__zfaKingExposed === false, "落地后标记清除")
-    ok(T.stats.kingLanded === 1, "落地计数 +1", String(T.stats.kingLanded))
-    const r3 = T.handlerKingVuln(eVuln, king, [{}], () => 1)
-    ok(r3 === 1, "落地后不再放大伤害", String(r3))
+    // ③ 出场期间：实体化（callNext(false)），血量保持压低
+    kStaff.switching = true
+    let argDuring
+    T.handlerEntityForce(eEnt, kStaff, [true], (v) => { argDuring = v })
+    ok(argDuring === false, '出场期间强制以 false 调用（绕过置空分支）', String(argDuring))
+    ok(kStaff.toughness === 200, '出场期间不回血', String(kStaff.toughness))
+
+    // ④ 出场结束（switching 转 false）→ 回满
+    kStaff.switching = false
+    T.handlerEntityForce(eEnt, kStaff, [true], () => undefined)
+    ok(kStaff.toughness === 1000 && kStaff.health === 1000, '出场结束回满到 1000/1000',
+      kStaff.health + '/' + kStaff.toughness)
+    ok(kStaff.__zfaKingExposed === false, '出场中标记已清（易伤不会残留）')
+    ok(T.stats.kingLanded === 1, '落地计数 +1', String(T.stats.kingLanded))
+    ok(kStaff.switching === false, '不写回 switching（1.2.11 那样做会打断授爵）')
 
     // ⑤ 非国王不受影响
-    const imp = new FakeZombie({ ID: 999, CODENAME: 'eighties_imp', bodyRecHiddenCD: 2 })
+    const imp = new FakeZombie({ ID: 999, CODENAME: 'eighties_imp', bodyRecHiddenCD: 2, toughness: 190, health: 190 })
     T.handlerKingExpose(eExpose, imp, [], () => undefined)
-    ok(imp.bodyRecHiddenCD === 2, "非国王的命中框不被改动", String(imp.bodyRecHiddenCD))
-    ok(imp.__zfaKingExposed === undefined, "非国王不会被打上易伤标记")
-    const r4 = T.handlerKingVuln(eVuln, imp, [{}], () => 1)
-    ok(r4 === 1, "非国王不吃易伤", String(r4))
+    ok(imp.bodyRecHiddenCD === 2, '非国王的命中框不被改动', String(imp.bodyRecHiddenCD))
+    ok(imp.__zfaKingExposed === undefined, '非国王不会被打上标记')
+    ok(imp.toughness === 190, '非国王的血量不被改动', String(imp.toughness))
 
-    // ⑥ 亚瑟王变体也算国王
-    ok(T.isKingZombie(new FakeZombie({ CODENAME: 'dark_king_veteran' })), 'dark_king_veteran 识别为国王')
-    ok(!T.isKingZombie(new FakeZombie({ CODENAME: 'dark_imp' })), '普通黑暗僵尸不是国王')
+    // ⑥ 亚瑟王变体也算国王（ID 判定，不依赖 codename）
+    ok(T.isKingZombie(new FakeZombie({ ID: 187 })), 'ID 187 识别为国王')
+    ok(T.isKingZombie(new FakeZombie({ ID: 188 })), 'ID 188（亚瑟王）也识别为国王')
+    ok(!T.isKingZombie(new FakeZombie({ ID: 190, CODENAME: 'dark_imp' })), '普通黑暗僵尸不是国王')
 
     // ⑦ 异常安全
     let threw = false
     try {
       T.handlerKingExpose(eExpose, null, [], () => undefined)
-      T.handlerKingLanded(eLanded, null, [], () => undefined)
-      T.handlerKingVuln(eVuln, null, [], () => 1)
+      T.handlerEntityForce(eEnt, null, [], () => undefined)
     } catch (err) { threw = true }
-    ok(!threw, "目标为空时不抛异常")
+    ok(!threw, '目标为空时不抛异常')
   }
 
-  section('13. 国王授爵自扣 + 运兵艇解除无敌')
+  section('13. 国王授爵自扣 150')
 
   {
     // ── 国王授爵 ──
@@ -247,36 +256,10 @@ export function runZombies({ T, mod }) {
     T.handlerKingKnight(eKnight, notKing, [], () => Promise.resolve())
     ok(notKing.health === 100, '非国王不受影响')
 
-    // ── 运兵艇解除无敌 ──
-    const eEnt = find('entityForce')
-    ok(!!eEnt && eEnt.methods[0] === 'setBodyRec',
-      '实体强制挂在 setBodyRec 上（bodyRec 的周期性重算入口）', eEnt ? eEnt.methods.join(',') : '(缺失)')
-
-    // 国王：出场期间强制 callNext(false)
-    const kEnt = new FakeZombie({ ID: 187, CODENAME: 'dark_king' })
-    kEnt.__zfaKingExposed = true
-    let kArg
-    T.handlerEntityForce(eEnt, kEnt, [true], (v) => { kArg = v; return undefined })
-    ok(kArg === false, '国王出场期间强制以 false 调用（绕过所有置空分支）', String(kArg))
-
-    // 落地后（标记清掉）不再干预
-    kEnt.__zfaKingExposed = false
-    let kArg2
-    T.handlerEntityForce(eEnt, kEnt, [true], (v) => { kArg2 = v })
-    ok(kArg2 === true, '落地后参数原样透传', String(kArg2))
-
-    // 非国王即使误带标记也不干预
-    const plain = new FakeZombie({ ID: 190, CODENAME: 'dark_imp' })
-    plain.__zfaKingExposed = true
-    let pArg
-    T.handlerEntityForce(eEnt, plain, [true], (v) => { pArg = v })
-    ok(pArg === true, '非国王原样透传（ID 判定生效）', String(pArg))
-
-    // ── 异常安全 ──
+    // 实体化与回血在第 11 段已覆盖，这里只留授爵 + 异常安全
     let t2 = false
     try {
       T.handlerKingKnight(eKnight, null, [], () => Promise.resolve())
-      T.handlerEntityForce(eEnt, null, [], () => undefined)
     } catch (e) { t2 = true }
     ok(!t2, '目标为空时不抛异常')
   }
