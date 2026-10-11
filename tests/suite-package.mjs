@@ -15,7 +15,7 @@ export function runPackage({ pkgRoot }) {
   // ── 清单 ──
   const packJson = JSON.parse(readFileSync(at('pack.json'), 'utf8'))
   ok(packJson.uuid === 'yg.zombie-fun-adjust', 'uuid 正确', packJson.uuid)
-  ok(packJson.version === '1.2.14', 'version = 1.2.14', packJson.version)
+  ok(packJson.version === '1.2.15', 'version = 1.2.15', packJson.version)
   ok(/（15 条）/.test(packJson.description), '描述标注为 15 条')
   ok(!/国王可被拦截|运兵艇|墓碑/.test(packJson.description),
     '描述里不含已撤销 / 做不到的功能（国王拦截、运兵艇、巨人墓碑）',
@@ -76,6 +76,8 @@ export function runPackage({ pkgRoot }) {
     'README 描述里不含已撤销 / 做不到的功能')
   ok(readme.includes('国王'), 'README 含国王相关条目')
   ok(readme.includes('NOTICE.md'), 'README 指向 NOTICE.md')
+  ok(readme.includes('DSH') && readme.includes('DeepSeek V4.1f'),
+    'README 声明了 DSH 与 DeepSeek V4.1f 的协作开发')
   ok(readme.includes('不需要任何额外脚本'), 'README 明确说明无需额外脚本')
   ok(!/fix-mod-startup|点\s*bat/i.test(readme), 'README 不含「点 bat」式安装指引')
 
