@@ -456,6 +456,35 @@ function handlerKingKnight(entry, thisArg, args, callNext) {
 }
 
 /**
+ * 该僵尸是不是国王 —— **ID 优先**。
+ *
+ * 1.2.10 之前的教训：只靠 `zombieCodename()`，而它依赖 Zombies 模块的导出名，
+ * 一旦对不上就恒定返回 null，于是 isKing 永远 false、整条逻辑一行不跑 —— 表现出来就是「改了没效果」。
+ * 现在 ID 优先（ZombieEnum: dark_king = 187 / dark_king_veteran = 188），codename 仅作兜底。
+ */
+function isKingZombie(z) {
+  try {
+    if (!z) return false
+    if (z.ID === 187 || z.ID === 188) return true
+    const code = zombieCodename(z)
+    return !!(code && /^dark_king/.test(code))
+  } catch (e) { return false }
+}
+
+/** 该僵尸是不是运兵艇 —— 同样 ID 优先（ZombieEnum: sky_dropship = 362） */
+function isDropshipZombie(z) {
+  try {
+    if (!z) return false
+    if (z.ID === 362) return true
+    const code = zombieCodename(z)
+    if (code === 'sky_dropship') return true
+    // 再兜一层：它的专属 objdata 带 ImpType = 'sky_imp'
+    const od = z.objdataOwn
+    return !!(od && od.ImpType === 'sky_imp' && od.ImpCount)
+  } catch (e) { return false }
+}
+
+/**
  * 12. 运兵艇 + 国王：强制拥有实体。
  *
  * 两者的 `bodyRec` 都被基类 `setBodyRec` 周期性地置成空矩形 —— 那才是「打不到」的真因。
@@ -468,9 +497,8 @@ function handlerKingKnight(entry, thisArg, args, callNext) {
 function handlerEntityForce(entry, thisArg, args, callNext) {
   try {
     if (thisArg) {
-      const code = zombieCodename(thisArg)
-      const isShip = code === 'sky_dropship'
-      const isKing = !!(code && /^dark_king/.test(code))
+      const isShip = isDropshipZombie(thisArg)
+      const isKing = isKingZombie(thisArg)
 
       if (isShip || isKing) {
         if (isShip) {
@@ -673,13 +701,6 @@ function handlerIceImmune(entry, thisArg, args, callNext) {
  *   · 生成僵尸走 `inLnC.SpawnZombie(zombieEnum, styleEnum)`（引擎里 `bowlingInfiNut`
  *     就是这么生成护盾的），另有 `SpawnZombieByZombieType(type, style, ...)` 的写法。
  */
-/** 该僵尸是不是国王 —— 用 codename 判定，兼容亚瑟王等变体 */
-function isKingZombie(z) {
-  try {
-    const code = zombieCodename(z)
-    return !!(code && /^dark_king/.test(code))
-  } catch (e) { return false }
-}
 function handlerKingIntercept(entry, thisArg, args, callNext) {
   const r = callNext(...args)
   try {
@@ -1310,6 +1331,8 @@ export const __test__ = {
   handlerKingKnight,
   handlerEntityForce,
   patchShipGetters,
+  isKingZombie,
+  isDropshipZombie,
   ICE_IMMUNE_IDS,
   handlerArcade,
   handlerSpike,
