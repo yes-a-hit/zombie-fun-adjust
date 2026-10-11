@@ -248,26 +248,42 @@ export function runZombies({ T, mod }) {
     ok(notKing.health === 100, '非国王不受影响')
 
     // ── 运兵艇解除无敌 ──
-    const eShip = find('dropshipExpose')
-    ok(!!eShip && eShip.methods[0] === 'specialZombieOnEnable',
-      '运兵艇挂在出生入口上', eShip ? eShip.methods.join(',') : '(缺失)')
+    const eShip = find('entityForce')
+    ok(!!eShip && eShip.methods[0] === 'setBodyRec',
+      '实体强制挂在 setBodyRec 上（bodyRec 的周期性重算入口）', eShip ? eShip.methods.join(',') : '(缺失)')
 
-    const ship = new FakeZombie({ ID: 1, health: 4000 })
+    const ship = new FakeZombie({ ID: 1, health: 4000, CODENAME: 'sky_dropship' })
     ship.bodyRec = { mark: 'real' }
-    T.handlerDropshipExpose(eShip, ship, [], () => undefined)
-    ok(ship.__zfaShipExposed === true, '运兵艇已标记解除无敌')
+    let passedArg
+    T.handlerEntityForce(eShip, ship, [true], (v) => { passedArg = v; return undefined })
+    ok(passedArg === false, '强制以 false 调用原实现（绕过所有置空分支）', String(passedArg))
+    ok(ship.isRealZombie === true, 'isRealZombie 置真（植物 judgeHaveEnemy 的必要条件）')
+    ok(ship.__zfaShipPatched === true, '运兵艇已标记解除无敌')
+    ok(ship.currentFarBodyRec() === false, 'currentFarBodyRec 已改为返回 false')
     ok(ship.bodyRecForShooter === ship.bodyRec, 'bodyRecForShooter 已短路到真实命中框')
     ok(ship.bodyRecReal === ship.bodyRec, 'bodyRecReal 已短路（原来是 -1e4 的假框）')
     ok(T.stats.dropshipsExposed === 1, '解除计数 +1', String(T.stats.dropshipsExposed))
 
-    T.handlerDropshipExpose(eShip, ship, [], () => undefined)
+    T.handlerEntityForce(eShip, ship, [true], () => undefined)
     ok(T.stats.dropshipsExposed === 1, '同一实例不重复处理（幂等）')
+
+    // 国王：出场期间把 switching 压成 false，否则 bodyRec 恒为空
+    const kingShip = new FakeZombie({ ID: 2, CODENAME: 'dark_king', switching: true })
+    kingShip.__zfaKingExposed = true
+    T.handlerEntityForce(eShip, kingShip, [true], () => undefined)
+    ok(kingShip.switching === false, '国王出场期间 switching 被压成 false')
+
+    // 无关僵尸不受影响
+    const plain = new FakeZombie({ ID: 3, CODENAME: 'eighties_imp' })
+    let plainArg
+    T.handlerEntityForce(eShip, plain, [true], (v) => { plainArg = v })
+    ok(plainArg === true, '无关僵尸的参数原样透传', String(plainArg))
 
     // ── 异常安全 ──
     let t2 = false
     try {
       T.handlerKingKnight(eKnight, null, [], () => Promise.resolve())
-      T.handlerDropshipExpose(eShip, null, [], () => undefined)
+      T.handlerEntityForce(eShip, null, [], () => undefined)
     } catch (e) { t2 = true }
     ok(!t2, '目标为空时不抛异常')
   }

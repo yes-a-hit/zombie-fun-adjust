@@ -141,10 +141,17 @@ const TARGETS = [
   // ── 11. 国王：每次授爵自扣血 ──
   // `DarkKingZombie._give()` 就是「给僵尸授爵」那一趟流程（异步方法）。
   { key: 'kingKnight', label: '国王·授爵自扣150', names: ['DarkKingZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['_give'], mode: 'kingKnight' },
-  // ── 12. 运兵艇：解除无敌 ──
-  // 它的免打有两重：bodyRecForShooter（depth>40 → 空矩形）与 bodyRecReal（坐标写死 -1e4）。
-  // 在出生时把两个 getter 都短路到真实命中框。血量 4000 走数据补丁。
-  { key: 'dropshipExpose', label: '运兵艇·解除无敌', names: ['SkyDropShipZombie'], module: 'chunks:///_virtual/SkyDropShipZombie.ts', methods: ['specialZombieOnEnable'], mode: 'dropshipExpose' },
+  // ── 12. 运兵艇 + 国王：出场/存在期间强制拥有实体 ──
+  // 两者的 bodyRec 都被基类 setBodyRec 周期性地置成空矩形：
+  //   setBodyRec(t) {
+  //     t || this.currentFarBodyRec() || this.bodyRecHiddenCD > 0
+  //       ? this.bodyRec = new Rect()      // 空
+  //       : this.defaultSetBodyRec()
+  //   }
+  //   · 运兵艇：currentFarBodyRec() 恒为 true，且 isRealZombie = false（植物直接无视）
+  //   · 国王：出场整段 switching = true
+  // 所以必须从 setBodyRec 这一层强制走正常路径，光改 getter 不够。
+  { key: 'entityForce', label: '运兵艇 + 国王·强制拥有实体', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setBodyRec'], mode: 'entityForce' },
   // ── 10. 国王：出场期间生成「隐形小鬼」，打死它即可拦截国王 ──
   // 1.2.3：国王改挂基类。DarkKingZombie 一旦定位不到就整条失效，
   // 这里同时对 Zombie 与 GridZombie 两个基类各挂一次，谁在就用谁。
@@ -449,33 +456,63 @@ function handlerKingKnight(entry, thisArg, args, callNext) {
 }
 
 /**
- * 12. 运兵艇：解除无敌。
+ * 12. 运兵艇 + 国王：强制拥有实体。
  *
- * 它的免打有两重，都藏在 getter 里：
- *   · 基类 `bodyRecForShooter` —— `depth > 40` 时返回空矩形（它 `height_depth = 200`）
- *   · 自己的 `bodyRecReal`    —— 坐标写死 `-1e4`，扔到地图外
- * 两个都短路到真实命中框，植物的检测器才扫得到它。
+ * 两者的 `bodyRec` 都被基类 `setBodyRec` 周期性地置成空矩形 —— 那才是「打不到」的真因。
+ * 这里就在 `setBodyRec` 这一层动手：
+ *   · 把 `switching` 压成 false（国王出场整段是 true）
+ *   · 把 `currentFarBodyRec` 覆盖成 () => false（运兵艇恒返回 true）
+ *   · 把 `isRealZombie` 置真（运兵艇是 false，植物连目标都不考虑它）
+ *   · 最后强行 callNext(false)，绕过原实现里所有「置空」分支
  */
-function handlerDropshipExpose(entry, thisArg, args, callNext) {
-  const r = callNext(...args)
+function handlerEntityForce(entry, thisArg, args, callNext) {
   try {
-    if (thisArg && !thisArg.__zfaShipExposed) {
-      thisArg.__zfaShipExposed = true
-      for (const key of ['bodyRecForShooter', 'bodyRecReal']) {
-        try {
-          Object.defineProperty(thisArg, key, {
-            configurable: true,
-            get() { return this.bodyRec },
-          })
-        } catch (e) { /* 单个覆盖失败不阻断另一个 */ }
+    if (thisArg) {
+      const code = zombieCodename(thisArg)
+      const isShip = code === 'sky_dropship'
+      const isKing = !!(code && /^dark_king/.test(code))
+
+      if (isShip || isKing) {
+        if (isShip) {
+          thisArg.isRealZombie = true        // 植物 judgeHaveEnemy 的必要条件
+          thisArg.bodyRecHiddenCD = 0
+          if (!thisArg.__zfaShipPatched) {
+            thisArg.__zfaShipPatched = true
+            patchShipGetters(thisArg)
+            stats.dropshipsExposed += 1
+            note('运兵艇：已解除无敌（isRealZombie + currentFarBodyRec + 命中框 getter）')
+          }
+        }
+        if (isKing && thisArg.__zfaKingExposed) {
+          thisArg.bodyRecHiddenCD = 0
+          try { thisArg.switching = false } catch (e) { /* 写不进就算了 */ }
+        }
+        // 强制走正常路径：原实现会因为 switching / currentFarBodyRec 把 bodyRec 置空
+        return callNext(false)
       }
-      stats.dropshipsExposed += 1
-      note('运兵艇：已解除无敌（bodyRecForShooter + bodyRecReal 均短路）')
     }
   } catch (err) {
-    noteOnce('ship', '运兵艇解除无敌失败：' + errText(err))
+    noteOnce('entity', '强制实体失败：' + errText(err))
   }
-  return r
+  return callNext(...args)
+}
+
+/** 把运兵艇身上三个「假命中框」入口都短路到真实命中框 */
+function patchShipGetters(ship) {
+  try {
+    Object.defineProperty(ship, 'currentFarBodyRec', {
+      configurable: true,
+      value() { return false },
+    })
+  } catch (e) { /* 单个失败不阻断其它的 */ }
+  for (const key of ['bodyRecForShooter', 'bodyRecReal']) {
+    try {
+      Object.defineProperty(ship, key, {
+        configurable: true,
+        get() { return this.bodyRec },
+      })
+    } catch (e) { /* 同上 */ }
+  }
 }
 
 /**
@@ -995,8 +1032,8 @@ function makeHandler(entry) {
           return handlerKingVuln(entry, thisArg, args, callNext)
         case 'kingKnight':
           return handlerKingKnight(entry, thisArg, args, callNext)
-        case 'dropshipExpose':
-          return handlerDropshipExpose(entry, thisArg, args, callNext)
+        case 'entityForce':
+          return handlerEntityForce(entry, thisArg, args, callNext)
         case 'gargTomb':
           return handlerGargTomb(entry, thisArg, args, callNext)
         case 'arcade':
@@ -1271,7 +1308,8 @@ export const __test__ = {
   handlerKingLanded,
   handlerKingVuln,
   handlerKingKnight,
-  handlerDropshipExpose,
+  handlerEntityForce,
+  patchShipGetters,
   ICE_IMMUNE_IDS,
   handlerArcade,
   handlerSpike,
