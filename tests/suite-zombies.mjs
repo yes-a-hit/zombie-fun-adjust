@@ -169,6 +169,60 @@ export function runZombies({ T, mod }) {
     ok(!!pe && pe.methods[0] === "characterUpdate", "挂在 Zombie.characterUpdate 上", pe ? pe.methods.join(",") : "(缺失)")
   }
 
+  section('11. 国王 · 出场动画解除无敌帧 + 高额易伤')
+
+  {
+    const eExpose = find('kingExpose')
+    const eLanded = find('kingLanded')
+    const eVuln = find('kingVuln')
+
+    // ① 挂载点
+    ok(!!eExpose && eExpose.methods[0] === 'onLaneSpawnSettled', '出场挂 onLaneSpawnSettled', eExpose ? eExpose.methods.join(',') : '(缺失)')
+    ok(!!eLanded && eLanded.methods[0] === 'onDirtSpawned', '落地挂 onDirtSpawned', eLanded ? eLanded.methods.join(',') : '(缺失)')
+    ok(!!eVuln && eVuln.methods[0] === 'extraDamageScale', '易伤走 extraDamageScale', eVuln ? eVuln.methods.join(',') : '(缺失)')
+
+    // ② 出场：解除命中框隐藏 + 打上易伤标记
+    const king = new FakeZombie({ ID: 1, CODENAME: 'dark_king', bodyRecHiddenCD: 2 })
+    T.handlerKingExpose(eExpose, king, [], () => undefined)
+    ok(king.bodyRecHiddenCD === 0, "出场时命中框隐藏被清零（= 解除无敌帧）", String(king.bodyRecHiddenCD))
+    ok(king.__zfaKingExposed === true, "已打上「易伤中」标记")
+    ok(T.stats.kingExposed === 1, "出场计数 +1", String(T.stats.kingExposed))
+
+    // ③ 易伤期间伤害放大 CFG.kingVulnerableScale 倍
+    const r1 = T.handlerKingVuln(eVuln, king, [{}], () => 1)
+    ok(r1 === T.CFG.kingVulnerableScale, `易伤期间伤害 x${T.CFG.kingVulnerableScale}`, String(r1))
+    const r2 = T.handlerKingVuln(eVuln, king, [{}], () => 0.5)
+    ok(Math.abs(r2 - 0.5 * T.CFG.kingVulnerableScale) < 1e-9, '在原有系数上再乘倍率', String(r2))
+
+    // ④ 落地：标记清除，易伤失效
+    T.handlerKingLanded(eLanded, king, [], () => undefined)
+    ok(king.__zfaKingExposed === false, "落地后标记清除")
+    ok(T.stats.kingLanded === 1, "落地计数 +1", String(T.stats.kingLanded))
+    const r3 = T.handlerKingVuln(eVuln, king, [{}], () => 1)
+    ok(r3 === 1, "落地后不再放大伤害", String(r3))
+
+    // ⑤ 非国王不受影响
+    const imp = new FakeZombie({ ID: 999, CODENAME: 'eighties_imp', bodyRecHiddenCD: 2 })
+    T.handlerKingExpose(eExpose, imp, [], () => undefined)
+    ok(imp.bodyRecHiddenCD === 2, "非国王的命中框不被改动", String(imp.bodyRecHiddenCD))
+    ok(imp.__zfaKingExposed === undefined, "非国王不会被打上易伤标记")
+    const r4 = T.handlerKingVuln(eVuln, imp, [{}], () => 1)
+    ok(r4 === 1, "非国王不吃易伤", String(r4))
+
+    // ⑥ 亚瑟王变体也算国王
+    ok(T.isKingZombie(new FakeZombie({ CODENAME: 'dark_king_veteran' })), 'dark_king_veteran 识别为国王')
+    ok(!T.isKingZombie(new FakeZombie({ CODENAME: 'dark_imp' })), '普通黑暗僵尸不是国王')
+
+    // ⑦ 异常安全
+    let threw = false
+    try {
+      T.handlerKingExpose(eExpose, null, [], () => undefined)
+      T.handlerKingLanded(eLanded, null, [], () => undefined)
+      T.handlerKingVuln(eVuln, null, [], () => 1)
+    } catch (err) { threw = true }
+    ok(!threw, "目标为空时不抛异常")
+  }
+
   section('7. 雪人小鬼 / 宝藏雪人 · 免疫冰系')
 
   {

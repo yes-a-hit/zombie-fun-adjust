@@ -35,6 +35,7 @@ const CFG = {
   kingGuardianSpawnStyle: 0, // 10. 生成风格（LnCSpawnZombieStyleEnum.appear = 0）
   kingGuardianOpacity: 0.35, // 10. 隐形程度（0 = 全透明，1 = 正常）
   jamDamageReduction: 0.5, // 2. 舞台效果期间减伤比例
+  kingVulnerableScale: 10, // 10. 国王出场动画期间的易伤倍率
   selfKillDamage: 999999, // 「自杀」用的致死伤害
 }
 
@@ -129,6 +130,13 @@ const TARGETS = [
   // ── 7. 冰河小鬼 / 冰鼬：完全免疫冰系控制 ──
   { key: 'iceImmune', label: '雪人小鬼/宝藏雪人·免疫冰冻', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setFreeze'], mode: 'iceImmune' },
   { key: 'iceImmune', label: '雪人小鬼/宝藏雪人·免疫减速', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['setChill'], mode: 'iceImmune' },
+  // ── 10. 国王：出场动画期间解除「无敌帧」，改为高额易伤 ──
+  // 引擎里国王的免打**不是** invincible，而是 onLaneSpawnSettled 里把命中框隐藏 2 秒：
+  //   this.bodyRecHiddenCD = 2
+  // 落地时 onDirtSpawned 再清零。这里把出场那段从「免打」改成「易伤窗口」。
+  { key: 'kingExpose', label: '国王·出场解除无敌帧', names: ['DarkKingZombie', 'GridZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['onLaneSpawnSettled'], mode: 'kingExpose' },
+  { key: 'kingLanded', label: '国王·落地解除易伤', names: ['DarkKingZombie', 'GridZombie'], module: 'chunks:///_virtual/DarkKingZombie.ts', methods: ['onDirtSpawned'], mode: 'kingLanded' },
+  { key: 'kingVuln', label: '国王·出场期间高易伤', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['extraDamageScale'], mode: 'kingVuln' },
   // ── 10. 国王：出场期间生成「隐形小鬼」，打死它即可拦截国王 ──
   // 1.2.3：国王改挂基类。DarkKingZombie 一旦定位不到就整条失效，
   // 这里同时对 Zombie 与 GridZombie 两个基类各挂一次，谁在就用谁。
@@ -141,7 +149,7 @@ const TARGETS = [
 const diagLines = []
 const notedOnce = new Set()
 const resolved = new Map()
-const stats = { jamReduced: 0, aoesMuted: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, kingGuards: 0, kingIntercepts: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
+const stats = { jamReduced: 0, aoesMuted: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, kingExposed: 0, kingLanded: 0, kingGuards: 0, kingIntercepts: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
 
 let activeCtx = null
 
@@ -332,6 +340,61 @@ function handlerMuteAoe(entry, thisArg, args, callNext) {
   stats.aoesMuted += 1
   noteOnce('aoe', '已拦截重金属巨人的音波斩（普通砸击保留）')
   return undefined
+}
+
+/**
+ * 10. 国王：出场动画期间解除「无敌帧」。
+ *
+ * 引擎里国王的免打**不是** `invincible`，而是：
+ *   onLaneSpawnSettled → this.bodyRecHiddenCD = 2    // 命中框隐藏 2 秒
+ *   onDirtSpawned      → this.bodyRecHiddenCD = 0    // 落地恢复
+ * 命中框隐藏期间植物的检测器扫不到它，表现出来就是「打不出伤害」。
+ *
+ * 这里在出场时把 `bodyRecHiddenCD` 清零，并打上「易伤中」标记 ——
+ * 于是整段出场动画期间它都可以被打，并由 handlerKingVuln 放大伤害。
+ */
+function handlerKingExpose(entry, thisArg, args, callNext) {
+  const r = callNext(...args)
+  try {
+    if (isKingZombie(thisArg)) {
+      thisArg.__zfaKingExposed = true
+      thisArg.bodyRecHiddenCD = 0        // 解除命中框隐藏 = 解除「无敌帧」
+      stats.kingExposed += 1
+      note('国王：出场期间已解除无敌帧，进入易伤窗口')
+    }
+  } catch (err) {
+    noteOnce('kingexpose', '国王出场解除失败：' + errText(err))
+  }
+  return r
+}
+
+/** 10. 国王：落地后解除易伤，恢复正常承伤 */
+function handlerKingLanded(entry, thisArg, args, callNext) {
+  const r = callNext(...args)
+  try {
+    if (thisArg && thisArg.__zfaKingExposed) {
+      thisArg.__zfaKingExposed = false
+      stats.kingLanded += 1
+      note('国王：已落地，易伤窗口关闭')
+    }
+  } catch (err) {
+    noteOnce('kinglanded', '国王落地解除失败：' + errText(err))
+  }
+  return r
+}
+
+/** 10. 国王：出场期间承受高额伤害（倍率见 CFG.kingVulnerableScale） */
+function handlerKingVuln(entry, thisArg, args, callNext) {
+  const base = callNext(...args)
+  try {
+    if (thisArg && thisArg.__zfaKingExposed) {
+      const mul = typeof base === 'number' ? base : 1
+      return mul * CFG.kingVulnerableScale
+    }
+  } catch (err) {
+    noteOnce('kingvuln', '国王易伤判定失败：' + errText(err))
+  }
+  return base
 }
 
 /**
@@ -843,6 +906,12 @@ function makeHandler(entry) {
           return handlerIceImmune(entry, thisArg, args, callNext)
         case 'muteAoe':
           return handlerMuteAoe(entry, thisArg, args, callNext)
+        case 'kingExpose':
+          return handlerKingExpose(entry, thisArg, args, callNext)
+        case 'kingLanded':
+          return handlerKingLanded(entry, thisArg, args, callNext)
+        case 'kingVuln':
+          return handlerKingVuln(entry, thisArg, args, callNext)
         case 'gargTomb':
           return handlerGargTomb(entry, thisArg, args, callNext)
         case 'arcade':
@@ -1113,6 +1182,9 @@ export const __test__ = {
   selfHitIgnoreArmor,
   PIXEL_ZOMBIE_IDS,
   handlerMuteAoe,
+  handlerKingExpose,
+  handlerKingLanded,
+  handlerKingVuln,
   ICE_IMMUNE_IDS,
   handlerArcade,
   handlerSpike,
