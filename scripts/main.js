@@ -358,7 +358,20 @@ function handlerKingExpose(entry, thisArg, args, callNext) {
   try {
     if (isKingZombie(thisArg)) {
       thisArg.__zfaKingExposed = true
-      thisArg.bodyRecHiddenCD = 0        // 解除命中框隐藏 = 解除「无敌帧」
+      thisArg.bodyRecHiddenCD = 0        // 解除命中框隐藏
+
+      // 关键：植物检测器只看 `bodyRecForShooter`，而它在 `depth > 40`（还在天上）时
+      // 返回**空矩形** —— 这才是真正打不到的原因。这里把它短路成真实命中框。
+      try {
+        if (!thisArg.__zfaKingRecPatched) {
+          thisArg.__zfaKingRecPatched = true
+          Object.defineProperty(thisArg, 'bodyRecForShooter', {
+            configurable: true,
+            get() { return this.bodyRec },
+          })
+        }
+      } catch (e) { /* 实例上定义失败就退化为只改 bodyRecHiddenCD */ }
+
       stats.kingExposed += 1
       note('国王：出场期间已解除无敌帧，进入易伤窗口')
     }
@@ -374,6 +387,13 @@ function handlerKingLanded(entry, thisArg, args, callNext) {
   try {
     if (thisArg && thisArg.__zfaKingExposed) {
       thisArg.__zfaKingExposed = false
+      // 恢复：摘掉实例上覆盖的 getter，回到引擎原实现
+      try {
+        if (thisArg.__zfaKingRecPatched) {
+          thisArg.__zfaKingRecPatched = false
+          delete thisArg.bodyRecForShooter
+        }
+      } catch (e) { /* 摘不掉就留着，命中框多暴露一会儿无害 */ }
       stats.kingLanded += 1
       note('国王：已落地，易伤窗口关闭')
     }

@@ -186,6 +186,9 @@ export function runZombies({ T, mod }) {
     T.handlerKingExpose(eExpose, king, [], () => undefined)
     ok(king.bodyRecHiddenCD === 0, "出场时命中框隐藏被清零（= 解除无敌帧）", String(king.bodyRecHiddenCD))
     ok(king.__zfaKingExposed === true, "已打上「易伤中」标记")
+    // 命中框短路 —— 植物检测器只看 bodyRecForShooter，它在 depth>40 时返回空矩形
+    ok(king.__zfaKingRecPatched === true, "bodyRecForShooter 已被短路到真实命中框")
+    ok(king.bodyRecForShooter === king.bodyRec, "bodyRecForShooter 返回真实命中框（绕过 depth>40 的空矩形）")
     ok(T.stats.kingExposed === 1, "出场计数 +1", String(T.stats.kingExposed))
 
     // ③ 易伤期间伤害放大 CFG.kingVulnerableScale 倍
