@@ -1,0 +1,219 @@
+{
+ "zombies": [
+  {
+   "codename": "kongfu_boss_explode",
+   "name": {
+    "en": "Wan Hu",
+    "zh": "万户"
+   },
+   "title": {
+    "en": "Third Seat, First to Leave the Ground",
+    "zh": "三把手，第一个离地的人"
+   },
+   "intro": {
+    "en": "The third seat of the Big Three, and the first of them to arrive on your lawn, leading an army of kongfu zombies. He travels in a chair with rockets strapped to it. This time, nobody lit them.",
+    "zh": "武林三巨头的三把手，最先到访你的前院，领着所有武斗僵尸。他坐在一把绑满火箭的椅子上，稳稳地挪过来——这一次他没让人点火。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "lobbed bombs destroy plants in a 3x3 area if their targets are not shoveled in time",
+      "zh": "如果没能及时铲除目标，丢出的炸弹将摧毁 3x3 范围内的植物"
+     }
+    },
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "summons Rocket Imps, both launched from off-screen and lobbed from his back",
+      "zh": "从背后丢出或从场外召唤出火箭小鬼"
+     }
+    },
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "Wan Hu of the Ming dynasty, the first human being to attempt spaceflight by rocket. His chair is a faithful reproduction of the original, tied somewhat more loosely",
+      "zh": "明代万户，人类第一个想靠火箭上天的人。他坐的这把椅子就是当年那件作品的复刻版，只是这次绑得松了些"
+     }
+    }
+   ],
+   "chat": {
+    "en": "The third seat of the Big Three, and the only one whose chair has ever left the ground. He once strapped himself to it with forty-seven rockets and asked a friend to light them. It is generally agreed that the flight was a success, in that he was, briefly, no longer standing on the lawn. He now handles diplomacy, since he can talk to anyone: monks about gunpowder, abbots about chair ergonomics, Dr. Zomboss about scheduling the next launch.",
+    "zh": "三把手里他排最后，论胆子他排第一。当年他把自己绑在椅子上，椅子后面绑了四十七支火箭，然后请人点火——那是人类第一次试图靠火箭上天。现在他负责外交，因为跟谁都能聊：跟武僧聊火药配方，跟住持聊椅子的人体工学，跟僵尸博士聊下一次点火排在哪天。他本人表示那次飞行是成功的：至少他确实离开了地面。"
+   }
+  },
+  {
+   "codename": "kongfu_boss_blade",
+   "name": {
+    "en": "Li Kui",
+    "zh": "李逵"
+   },
+   "title": {
+    "en": "Second Seat, Two Axes",
+    "zh": "二把手，两把板斧"
+   },
+   "intro": {
+    "en": "The second seat of the Big Three, arriving second on your lawn with a large company of monks and kongfu zombies. He carries two axes. One stays in his hand; the other does not.",
+    "zh": "武林三巨头的二把手，第二位到访你的前院，领着大量武僧和武斗僵尸。他带两把板斧：一把留在手里，一把飞出去。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "absorbs all damage while his axe is flying across your defence",
+      "zh": "在把板斧掷向你的防线期间，会吸收所有伤害"
+     }
+    },
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "the second seat, earned with two axes and a working knowledge of qigong",
+      "zh": "二把手。位置是两把板斧换来的，外加一点够用的气功"
+     }
+    }
+   ],
+   "chat": {
+    "en": "The second seat was earned with two axes: one for plants, one as a spare, because the first one tends to stay in the plant. He does not raise his hand in meetings; he simply shouts, and the meeting generally agrees with him. He knows a little qigong, which he infuses into his axes to achieve 'man and weapon as one' — mostly because the axes are too heavy to swing otherwise. Asked why he never challenges for the top seat, he says that job requires talking, and he does not do that.",
+    "zh": "二把手的位置是两把板斧挣来的。一把砍植物，一把备用，因为第一把经常卡在植物里拔不出来。他开会从不举手，直接喊，喊完会议一般就通过了。他稍微会一点气功，把气灌进斧子里，说是「人兵合一」，实际上是因为斧子太重，不灌点气抡不动。有人问他为什么不争一把手，他说那个位子要会讲话，他不会。"
+   }
+  },
+  {
+   "codename": "kongfu_boss_chi",
+   "name": {
+    "en": "Zhang Jiao",
+    "zh": "张角"
+   },
+   "title": {
+    "en": "First Seat, and the Slogan",
+    "zh": "一把手，与那八个字"
+   },
+   "intro": {
+    "en": "The first seat of the Big Three, and the last of them to arrive, leading a great many abbot zombies. He announces that the Blue Sky is dead and the Yellow Sky should take its place, and only then begins the assault.",
+    "zh": "武林三巨头的一把手，也是最后一位到场，领着大量住持僵尸。出场先喊一句「苍天已死，黄天当立」，喊完才开始打。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "on recovering from a stun effect, uses the Golden Bell Shield to protect himself for a while",
+      "zh": "在眩晕结束后，会使用金钟罩保护自己一段时间"
+     }
+    },
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "The first seat. He did not fight his way up: he got there with a slogan that has aged remarkably well, plus the organizational skill to split his followers into thirty-six divisions, each with its own commander.",
+      "zh": "一把手。坐上去靠的不是拳头，是那句流传了千年的口号，以及分三十六方、各立渠帅的组织能力"
+     }
+    }
+   ],
+   "chat": {
+    "en": "The top seat was not taken by force. It was taken by volume. He stood up one day and announced that the Blue Sky was dead and the Yellow Sky should take its place, then divided his followers into thirty-six divisions, each with its own commander, and ran the uprising like a franchise opening. He also healed the sick with blessed water; results varied, the queue did not. He still opens every appearance with those eight characters. Asked whether he might update the wording, he says that would be the end of the recruitment drive.",
+    "zh": "一把手。他的位置不是打出来的，是喊出来的。当年他站出来说了一句「苍天已死，黄天当立」，然后把信众分成三十六方，各立渠帅，一场起义组织得像连锁店同时开业。他还会用符水治病，效果因人而异，但排队的人从没少过。如今他领着住持僵尸出场，开场白还是那八个字，一个字都没改。他说改了就没法招人了。"
+   }
+  },
+  {
+   "codename": "dark_king",
+   "name": {
+    "en": "Zombie King",
+    "zh": "国王僵尸"
+   },
+   "title": {
+    "en": "A Generous Monarch, Low on Stock",
+    "zh": "慷慨的君主，库存紧张"
+   },
+   "intro": {
+    "en": "Grants knight helms to nearby peasant zombies. He no longer arrives invincible: he arrives with 200 temporary health, and every knighthood costs him 150 of it.",
+    "zh": "为附近的农夫僵尸授予骑士头盔。出场时不再无敌，头上先顶着 200 点临时血量，每册封一位骑士还要从自己身上划走 150 点。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "grants knight helms to nearby peasant zombies",
+      "zh": "为附近的农夫僵尸授予骑士头盔"
+     }
+    },
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "no longer invincible on arrival: 200 temporary health, and 150 lost to each knighthood",
+      "zh": "出场不再无敌：临时血量 200，每册封一位骑士自扣 150 点"
+     }
+    }
+   ],
+   "chat": {
+    "en": "Zombie King has always considered himself a generous monarch. He is, in fact, generous: every time he knights someone, he generously deducts 150 health from himself. He used to arrive invincible, so nobody bothered to keep the books. Now he arrives with 200 temporary health, and the chamberlain has to remind him that the treasury can afford three more knighthoods at most. His Majesty maintains that a crown is worth more than blood, and that blood grows back.",
+    "zh": "国王僵尸一直认为自己是个慷慨的君主。他确实很慷慨——每册封一位骑士，他都会从自己身上慷慨地划走 150 点血。以前他出场是无敌的，那会儿没人记账；现在他一到场就带着 200 点临时血量，礼宾司不得不小声提醒：陛下，库存只够再封三位了。他本人表示，王冠比血贵，而血是会再长的。"
+   }
+  },
+  {
+   "codename": "dark_king_veteran",
+   "name": {
+    "en": "Arthur King Zombie",
+    "zh": "亚瑟王僵尸"
+   },
+   "title": {
+    "en": "Master of the Round Table, Never Seated",
+    "zh": "圆桌的主人，从不落座"
+   },
+   "intro": {
+    "en": "Grants knight helms to every nearby zombie but himself. He no longer arrives invincible: he brings 300 temporary health, and each knighthood takes 150 of it.",
+    "zh": "为附近的僵尸授予骑士头盔，除了自己。出场时不再无敌，带着 300 点临时血量，每册封一位自扣 150 点。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "grants knight helms to nearby zombies, any kind but himself",
+      "zh": "为附近的僵尸授予骑士头盔，除了自己"
+     }
+    },
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "no longer invincible on arrival: 300 temporary health, and 150 lost to each knighthood",
+      "zh": "出场不再无敌：临时血量 300，每册封一位自扣 150 点"
+     }
+    }
+   ],
+   "chat": {
+    "en": "Arthur King Zombie's round table seats twenty-four, but he never sits down — he knights standing up, which he insists is tradition. Each knighthood costs him 150 health, and the 300 he arrives with is the whole of his estate. Advisors suggest knighting fewer people. He says chivalry does not come with a discount. Staff report that the sword from the Lady of the Lake was recently pawned, and the proceeds will cover two more knights.",
+    "zh": "亚瑟王僵尸的圆桌有二十四个座位，但他从不落座——授爵要站着，他说这是传统。每授一位，他自扣 150 点血，出场时那 300 点就是他全部的家底。有人劝他少封几个，他说骑士精神不打折。据工作人员称，湖中仙女给的那把剑最近被当掉了，换回来的血够再封两位。"
+   }
+  }
+ ]
+}

@@ -4,6 +4,40 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.3.0] - 2026-10-18
+
+### 新增
+
+- **武林三巨头改名**（功夫世界，`jsons/features/ZombieFeatures.json`）：
+
+  | 原 | 新 | 梗 |
+  |---|---|---|
+  | 火药魔头 Devil of Dynamite | **万户 Wan Hu** | 明代万户，人类第一个想靠火箭上天的人 |
+  | 持刀大侠 Blade-Wielding Hero | **李逵 Li Kui** | 水浒黑旋风，两把板斧 |
+  | 气功教主 Qigong Master | **张角 Zhang Jiao** | 黄巾起义，「苍天已死，黄天当立」 |
+
+  三者的「三把手 / 二把手 / 一把手」层级关系原样保留，只是换了履历。
+  `kongfu_boss_chi` 的图鉴与 `KONGFU_INTRO_BOSS3` 出场剧情都写了那八个字。
+
+- **图鉴按「宝开语」重写**（`jsons/objects/ZombieAlmanac.json`，33 条）：
+  - 18 只被改动过行为的僵尸（三巨头 + 国王/亚瑟王 + 弄臣 + 章鱼 + 蜻蜓 + 雪人小鬼 +
+    宝藏雪人 + 闪耀 + 麦克 + 霹雳舞 + 像素 + 重金属巨尸 + 战斗机 + 无人机工程师 + 伞兵小鬼），
+    `Introduction` / `Special` / `Chat` 整条重写，`Special` 里新增一条说明这次动了什么。
+  - 原作里已经不成立的描述被删掉（例如重金属巨尸的「音波斩」条目 —— 1.2.5 起就没这个功能了）。
+  - 17 只小鬼在各自 `Special` 末尾追加一句档案，讲的是「变脆」这件事。
+    其中 15 只单独出条目，雪人小鬼与伞兵小鬼**并进上面重写后的那条**——
+    同一 codename 生成两个对象会让后者覆盖前者（本次校对抓到的坑，已修）。
+  - 足球小鬼（`sportzball_imp`）在 `ZombieAlmanac` 里没有条目，档案只存在于数据层，不写图鉴。
+
+- **功夫世界三段剧情同步换名**（`jsons/objects/NarrativeList.json`）：
+  `KONGFU_INTRO_BOSS2`（万户）、`KONGFU_INTRO_BOSS3`（张角）、`KONGFU_OUTRO_BOSS2`（李逵）。
+
+### 说明
+
+- 文案由 WorkBuddy 按统一 brief 产出，schema 校验与合并由主 agent 完成；
+  双语（中/英）成对写入，英文按 PopCap 原文腔调写，不是直译。
+- `sportzball_imp`（足球小鬼）在 `ZombieAlmanac` 里没有条目，它的档案只存在于数据层，不写图鉴。
+
 ## [1.2.13] - 2026-10-11
 
 ### 新增

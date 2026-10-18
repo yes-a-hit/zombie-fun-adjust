@@ -1,0 +1,194 @@
+{
+  "zombies": [
+    {
+      "codename": "dark_juggler",
+      "intro": {
+        "en": "Catches projectiles thrown at him and returns them. While spinning he speeds up, and loses 20 health per second. The audience calls this showmanship.",
+        "zh": "把砸向他的弹射物接住，再丢回来。转起来之后他会越走越快，同时每秒从自己身上掉 20 点血——观众管这叫演出效果。"
+      },
+      "special": [
+        {
+          "name": { "en": "Special", "zh": "特殊" },
+          "desc": {
+            "en": "speeds up while spinning",
+            "zh": "旋转时会加速行进"
+          }
+        },
+        {
+          "name": { "en": "Weakness", "zh": "弱点" },
+          "desc": {
+            "en": "attacks from bubbles or flame",
+            "zh": "来自火焰或者泡泡的攻击"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "loses 20 health per second for as long as he keeps spinning",
+            "zh": "旋转期间每秒自扣 20 点血"
+          }
+        }
+      ],
+      "chat": {
+        "en": "Jester Zombie's spin is an art form. Art does not pay the bills, it makes him dizzy, and it costs him 20 health per second in admission fees. He holds a Master of Fine Arts from the Chewliard Performing Arts School and has shared a stage with the finest classical companies this side of the lawn. He says the trick to spinning is not thinking about spinning, and not thinking about the health bar. He also says the dizziness is because the audience does not appreciate art.",
+        "zh": "弄臣僵尸的旋转是一门艺术。艺术不能当饭吃，转久了还会头晕，而且每秒要自己掏 20 点血当门票。他在「咀嚼者」表演艺术学校拿过艺术硕士学位，跟这一带最好的古典剧团同台过。他说旋转的秘诀是不去想自己在转，也不去想血条。他还说头晕是因为观众不懂欣赏。"
+      }
+    },
+    {
+      "codename": "beach_octopus",
+      "intro": {
+        "en": "Throws octopi at your plants to bind them up. Each throw costs him 150 health. The octopi are his own, and so is the bill.",
+        "zh": "向你的植物投掷章鱼，把植物缠住使其无法行动。每扔出一只，他自扣 150 点血——章鱼是他自己养的，成本也归他自己。"
+      },
+      "special": [
+        {
+          "name": { "en": "Special", "zh": "特殊" },
+          "desc": {
+            "en": "bound plants are passive until their octopus is destroyed",
+            "zh": "在章鱼被摧毁之前，被缠住的植物没有行动力"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "loses 150 health every time he throws an octopus",
+            "zh": "每扔一次章鱼自扣 150 点血"
+          }
+        }
+      ],
+      "chat": {
+        "en": "It started innocently enough: he decided to get a pet octopus. Then he loved that octopus so much he got another, and another, and another, and ended up volunteering at an octopus rescue shelter. He is now the undersea equivalent of a cat lady, and nobody dares count how many live at his house. Every octopus he throws is one of his own, which is why each throw costs him 150 health. He maintains this is not an injury. It is a school run.",
+        "zh": "事情的起因很简单：他决定养一只宠物章鱼。后来他太喜欢那只章鱼，又养了一只，一只，又一只，最后在章鱼救助站当起了志愿者。现在他是海底版的猫夫人，家里住了多少只没人敢数。他扔出去的每一只都是自家孩子，所以每扔一次他要心疼掉 150 点血。他本人表示这不叫受伤，这叫送孩子上学。"
+      }
+    },
+    {
+      "codename": "lostcity_bug",
+      "intro": {
+        "en": "The bug carries a zombie over low plants and other barriers. Its armour has been thinned from 350 to 90, so a decent volley will bring it down.",
+        "zh": "蜻蜓提着僵尸越过低矮植物和其他障碍物。护甲薄了：从 350 点削到 90 点，一轮像样的齐射就能把它打下来。"
+      },
+      "special": [
+        {
+          "name": { "en": "Special", "zh": "特殊" },
+          "desc": {
+            "en": "flies low and carries its rider over low plants and other barriers",
+            "zh": "低空飞行，能把背上的僵尸举过低矮植物与其他障碍物"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "armour health cut from 350 to 90",
+            "zh": "护甲血量从 350 点降到 90 点"
+          }
+        }
+      ],
+      "chat": {
+        "en": "Bug Zombie and Bug make a great team. Partly because Bug gives Bug Zombie great mobility, but mostly because they share an intense disinterest in horses. Bug has recently switched to lighter armour — 350 down to 90 — on the grounds that flying fast beats taking hits. That argument was last heard shortly before the first volley. Bug maintains it simply refused to keep carrying something heavier than itself.",
+        "zh": "僵尸和蜻蜓是绝佳的搭档。部分原因是蜻蜓给了僵尸强大的机动性，但主要原因是他们都对马不感兴趣。这次蜻蜓换了一身更轻的甲，350 点削到 90 点，理由是「飞得快比扛得住重要」。这个说法在第一轮齐射之后就没再被提起。据蜻蜓本人表示，它只是不想再驮着一个比自己还重的东西飞来飞去。"
+      }
+    },
+    {
+      "codename": "iceage_imp",
+      "intro": {
+        "en": "Thrown over most of your defences, then ambles onward. It has 95 health and is completely immune to freezing and slowing. To him, ice plants are air conditioning.",
+        "zh": "被丢出越过你的防线，然后再继续往前走。血量 95，并且完全免疫冰冻与减速——冰系植物对他来说只是凉快。"
+      },
+      "special": [
+        {
+          "name": { "en": "Special", "zh": "特殊" },
+          "desc": {
+            "en": "thrown over most of your defences, then ambles onward",
+            "zh": "被投掷越过大部分防线后继续行进"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "95 health",
+            "zh": "血量 95"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "completely immune to freezing and slowing effects",
+            "zh": "完全免疫冰冻与减速"
+          }
+        }
+      ],
+      "chat": {
+        "en": "Yeti Imp has taken up knitting. He started with a scarf, moved on to mittens, and eventually knitted an entire bodysuit out of hair shaved off Yeti Zombie. The suit is very warm, which does not explain why ice does nothing to him: he simply cannot feel cold. Snow Peas hit him and he assumes someone is being considerate. He says the immunity is a gift and the knitting is a hobby, and the two are entirely unrelated.",
+        "zh": "雪人小鬼最近开始编织。他从围巾开始，织到手套，最后用从雪人僵尸身上剃下来的毛织了一整套连体服。这套衣服很暖和，但这解释不了他为什么不怕冰——他根本感觉不到冷，冰豌豆打在身上，他只当是有人在给他降温。他本人表示，免疫冰冻是天赋，穿毛衣是爱好，两者没有任何关系。"
+      }
+    },
+    {
+      "codename": "treasureyeti",
+      "intro": {
+        "en": "A rare and curious creature that carries treasure and leaves after a short while. It is completely immune to freezing and slowing, so ice will not be what keeps it on the lawn.",
+        "zh": "罕见而稀奇的生物，随身带着宝物，进场待一会儿就走。它完全免疫冰冻与减速，想靠冰系植物把它留下是行不通的。"
+      },
+      "special": [
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "runs away after a short while",
+            "zh": "进场一段时间后就撤离"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "carries treasure",
+            "zh": "携带宝物"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "completely immune to freezing and slowing effects",
+            "zh": "完全免疫冰冻与减速"
+          }
+        }
+      ],
+      "chat": {
+        "en": "The rare and wondrous Yeti carries his lunch box up and down Mount Brainer to his isolated mountain lodge. He never travels empty-handed: the treasure and the lunch box share a bag. People have tried freezing him in place and going through it at leisure. That does not work, because cold is not something that happens to him. He says the best answer to being surrounded is to leave, and he has practised this for some years.",
+        "zh": "罕见而奇妙的雪人提着午餐盒，在脑山上下往返，回他那座与世隔绝的山间小屋。他从不空手，宝物和午餐盒装在同一个包里。有人试过把他冻在原地再慢慢翻包，没成，因为冷这件事根本不发生在他身上。他本人表示，被围住时最好的办法是走开，而不是打，这一点他已经实践了很多年。"
+      }
+    },
+    {
+      "codename": "eighties_glitter",
+      "intro": {
+        "en": "When she feels the beat, she trails a rainbow that shields the zombies behind her. The rainbow stops bullets. It does not stop spikes. She steps on one and is simply gone.",
+        "zh": "感受到属于她的节奏时，会拉出一道彩虹，保护身后的僵尸。彩虹挡得住子弹，挡不住地刺——踩上去，她当场就没了。"
+      },
+      "special": [
+        {
+          "name": { "en": "Damage", "zh": "攻击" },
+          "desc": {
+            "en": "crushes plants with her wheels during her jam",
+            "zh": "在属于她的音乐下，用滑轮碾压植物"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特殊" },
+          "desc": {
+            "en": "the rainbow shields zombies behind her while she feels the beat",
+            "zh": "感受到节奏期间，彩虹会保护她身后的僵尸"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "instantly destroyed by spikes",
+            "zh": "踩到地刺直接被秒"
+          }
+        }
+      ],
+      "chat": {
+        "en": "Glitter Zombie inspires zombies everywhere to boogie their brains out — for a moment, or forever, or at least until the lights come on and everybody gets kicked out. Her rainbow stops an entire row of peas and covers everyone behind her. It does nothing about the spikes under her wheels. Staff report that she never inspects the stage, only the audience. She says art does not look down.",
+        "zh": "闪耀僵尸激励世界各地的僵尸尽情狂欢，不管是一瞬间还是永远，至少到灯光亮起、清扫工把人都赶走为止。她的彩虹能挡住一整排豌豆，护住身后所有同伴，唯独挡不住脚下那排地刺。据工作人员称，她上台从不看地形，只看观众。她本人表示，艺术不该低头。"
+      }
+    }
+  ]
+}

@@ -15,8 +15,8 @@ export function runPackage({ pkgRoot }) {
   // ── 清单 ──
   const packJson = JSON.parse(readFileSync(at('pack.json'), 'utf8'))
   ok(packJson.uuid === 'yg.zombie-fun-adjust', 'uuid 正确', packJson.uuid)
-  ok(packJson.version === '1.2.15', 'version = 1.2.15', packJson.version)
-  ok(/（15 条）/.test(packJson.description), '描述标注为 15 条')
+  ok(packJson.version === '1.3.0', 'version = 1.3.0', packJson.version)
+  ok(/（17 条）/.test(packJson.description), '描述标注为 17 条')
   ok(!/国王可被拦截|运兵艇|墓碑/.test(packJson.description),
     '描述里不含已撤销 / 做不到的功能（国王拦截、运兵艇、巨人墓碑）',
     packJson.description.slice(0, 40))
@@ -71,7 +71,7 @@ export function runPackage({ pkgRoot }) {
 
   // ── 文档口径 ──
   const readme = readFileSync(at('README.md'), 'utf8')
-  ok(readme.includes('15 条'), 'README 改动一览标注为 15 条')
+  ok(readme.includes('17 条'), 'README 改动一览标注为 17 条')
   ok(!/国王可被拦截|运兵艇|巨人墓碑/.test(readme),
     'README 描述里不含已撤销 / 做不到的功能')
   ok(readme.includes('国王'), 'README 含国王相关条目')
@@ -88,4 +88,43 @@ export function runPackage({ pkgRoot }) {
     ok(install.includes('不需要任何额外脚本'), 'INSTALL.md 明确说明无需额外脚本')
     ok(install.includes('与本模组无关'), 'INSTALL.md 把 afterProject 归因到环境而非本模组')
   }
+
+  // ── 1.3.0：三巨头改名 + 图鉴重写 ──
+  const feat = JSON.parse(readFileSync(at('jsons/features/ZombieFeatures.json'), 'utf8'))
+  const zNames = Object.fromEntries((feat.ZOMBIES || []).map((z) => [z.CODENAME, z.NAME]))
+  ok(zNames.kongfu_boss_explode && zNames.kongfu_boss_explode.zh === '万户' && zNames.kongfu_boss_explode.en === 'Wan Hu',
+    '火药魔头 → 万户 / Wan Hu', JSON.stringify(zNames.kongfu_boss_explode))
+  ok(zNames.kongfu_boss_blade && zNames.kongfu_boss_blade.zh === '李逵', '持刀大侠 → 李逵', JSON.stringify(zNames.kongfu_boss_blade))
+  ok(zNames.kongfu_boss_chi && zNames.kongfu_boss_chi.zh === '张角', '气功教主 → 张角', JSON.stringify(zNames.kongfu_boss_chi))
+
+  const al = JSON.parse(readFileSync(at('jsons/objects/ZombieAlmanac.json'), 'utf8'))
+  ok(al.objects.length === 33, '图鉴补丁 33 条（18 条重写 + 15 条小鬼独立条目）', String(al.objects.length))
+  const aliasSeen = new Set()
+  let dup = null
+  for (const o of al.objects) {
+    if (aliasSeen.has(o.aliases[0])) dup = o.aliases[0]
+    aliasSeen.add(o.aliases[0])
+  }
+  ok(dup === null, '同一 codename 不出现两次（避免后者覆盖前者）', String(dup))
+  const byCn = Object.fromEntries(al.objects.map((o) => [o.aliases[0], o.objdata]))
+  ok(/苍天已死/.test(JSON.stringify(byCn.kongfu_boss_chi)), '张角图鉴含「苍天已死，黄天当立」')
+  for (const cn of ['kongfu_boss_explode', 'kongfu_boss_blade', 'kongfu_boss_chi', 'dark_king', 'dark_king_veteran', 'eighties_gargantuar']) {
+    const d = byCn[cn] || {}
+    ok(d.Introduction && d.Introduction.zh && d.Introduction.en && d.Chat && d.Chat.zh && d.Chat.en,
+      `${cn} 图鉴三块齐全且中英双语`)
+    ok(Array.isArray(d.Special) && d.Special.length >= 1, `${cn} 至少一条 Special`)
+  }
+  const gargSpecial = (byCn.eighties_gargantuar && byCn.eighties_gargantuar.Special) || []
+  ok(!gargSpecial.some((s) => /音波/.test(JSON.stringify(s)) && !/不再|no longer/i.test(JSON.stringify(s))),
+    '重金属巨尸图鉴里不存在「仍会发波」的攻击条目',
+    JSON.stringify(gargSpecial.map((s) => s.DESCRIPTION && s.DESCRIPTION.zh)))
+  const kidCount = al.objects.filter((o) => Array.isArray(o.objdata.Special)
+    && o.objdata.Special.some((s) => s.NAME && s.NAME.en === 'Update')).length
+  ok(kidCount === 17, '17 只小鬼各追加了一条「更新」档案', String(kidCount))
+
+  const nar = JSON.parse(readFileSync(at('jsons/objects/NarrativeList.json'), 'utf8'))
+  const narAll = JSON.stringify(nar)
+  ok(!/火药魔头|持刀大侠|气功教主/.test(narAll), '剧情里不再出现旧名')
+  ok(/万户/.test(narAll) && /李逵/.test(narAll) && /张角/.test(narAll), '剧情已换用新名')
+  ok(/苍天已死，黄天当立/.test(narAll), '张角出场剧情含「苍天已死，黄天当立」')
 }

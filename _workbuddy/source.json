@@ -1,0 +1,494 @@
+{
+ "zombies": [
+  {
+   "codename": "dark_juggler",
+   "name": {
+    "en": "Jester Zombie",
+    "zh": "弄臣僵尸"
+   },
+   "change": "旋转期间每秒自扣 20 血",
+   "intro": {
+    "en": "Returns projectiles that are shot at him.",
+    "zh": "将砸向他的弹射物丢回。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特殊"
+     },
+     "desc": {
+      "en": "speeds up while spinning",
+      "zh": "旋转时会加速行进"
+     }
+    },
+    {
+     "name": {
+      "en": "Weakness",
+      "zh": "弱点"
+     },
+     "desc": {
+      "en": "attacks from bubbles or flame",
+      "zh": "来自火焰或者泡泡的攻击"
+     }
+    }
+   ],
+   "chat": {
+    "en": "Oh sure, everyone loves to laugh at Jester Zombie's clownish routines. But what no one knows is that he has a Master of Fine Arts from the Chewliard Performing Arts School. Heck, he's been on stage with some of the finest classical theatre companies this side of the lawn. But sometimes you just gotta go where the paycheck is.",
+    "zh": "当然，每个人都喜欢嘲笑小丑僵尸的小丑表演。但没有人知道的是，他曾在“咀嚼者”表演艺术学校获得艺术硕士学位。见鬼，他曾与最优秀的古典剧团同台演出。但有时候，去薪水高的地方才是最佳选择。"
+   }
+  },
+  {
+   "codename": "dark_king",
+   "name": {
+    "en": "Zombie King",
+    "zh": "国王僵尸"
+   },
+   "change": "出场动画期间不再无敌、临时血量 200；每授爵一次自扣 150 血",
+   "intro": {
+    "en": "Grants knight helms to nearby peasant zombies.",
+    "zh": "为附近的农夫僵尸授予骑士头盔。"
+   },
+   "special": [],
+   "chat": {
+    "en": "As Shakespeare once wrote, \"Uneasy lies the head that wears a crown.\" And Zombie King couldn't agree more. It is incredibly difficult to get a good night's sleep with a crown on your head. That thing is all kinds of uncomfortable.",
+    "zh": "莎士比亚曾写道：“头戴王冠的人不安宁。”国王僵尸对此深表赞同。头戴王冠是很难睡个好觉的。那东西在各方面让人不舒服。"
+   }
+  },
+  {
+   "codename": "dark_king_veteran",
+   "name": {
+    "en": "Arthur King Zombie",
+    "zh": "亚瑟王僵尸"
+   },
+   "change": "出场动画期间不再无敌、临时血量 300；每授爵一次自扣 150 血",
+   "intro": {
+    "en": "Grants knight helms to nearby zombies, any kind but himself!",
+    "zh": "为附近的僵尸授予骑士头盔，除了自己的所有僵尸！"
+   },
+   "special": [],
+   "chat": {
+    "en": "It must be easier to grant someone else with our spare helmet instead of battling on our own, right?",
+    "zh": "比起自己去战斗，把自己多余的盔甲授予他人肯定更轻松吧。"
+   }
+  },
+  {
+   "codename": "beach_octopus",
+   "name": {
+    "en": "Octopus Zombie",
+    "zh": "章鱼僵尸"
+   },
+   "change": "每扔一次章鱼自扣 150 血",
+   "intro": {
+    "en": "Throws octopi at your plants to bind them up.",
+    "zh": "向你的植物投掷章鱼，使植物无法行动。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特殊"
+     },
+     "desc": {
+      "en": "bound plants are passive until their octopus is destroyed",
+      "zh": "在章鱼被摧毁之前，被缠住的植物没有行动力"
+     }
+    }
+   ],
+   "chat": {
+    "en": "It started innocently enough. One day, Octo Zombie decided to get a pet octopus. But he loved that octopus so much, he got another and another... and another. Next thing you know, he was volunteering at an octopus rescue shelter. And now, well, no one wants to tell him, but he's pretty much the undersea equivalent of a cat lady. You should see how many are living at his house. It's quite startling.",
+    "zh": "事情的起因很简单。有一天，章鱼僵尸决定养一只宠物章鱼。但他太喜欢那只章鱼了，于是又买了一只，一只，又一只。接下来，他就在章鱼救助站当起了志愿者。现在，虽然没人愿意告诉他，但他已经成了海底的猫夫人，你应该看看他家里住了多少只猫，太惊人了！"
+   }
+  },
+  {
+   "codename": "lostcity_bug",
+   "name": {
+    "en": "Bug Zombie",
+    "zh": "蜻蜓僵尸"
+   },
+   "change": "护甲血量 350 → 90",
+   "intro": {
+    "en": "Bug carries zombie in over ground defenses and lifts him over barriers.",
+    "zh": "蜻蜓使僵尸越过低矮植物，并把他举过其他障碍物。"
+   },
+   "special": [],
+   "chat": {
+    "en": "Bug Zombie and Bug make a great team. Partly because Bug gives Bug Zombie great mobility, but mostly because they share an intense disinterest in horses.",
+    "zh": "僵尸和蜻蜓是绝佳的搭档。部分原因是蜻蜓给了僵尸强大的机动性，但主要原因是他们都对马不感兴趣。"
+   }
+  },
+  {
+   "codename": "iceage_imp",
+   "name": {
+    "en": "Yeti Imp",
+    "zh": "雪人小鬼"
+   },
+   "change": "血量 95；完全免疫冰冻与减速",
+   "intro": {
+    "en": "Thrown over most of your defenses, then ambles onward.",
+    "zh": "被丢出越过你的防线，然后再往前或往后走。"
+   },
+   "special": [],
+   "chat": {
+    "en": "Yeti Imp recently took up knitting. He started with a scarf, moved to mittens and eventually knitted an entire bodysuit out of hair he shaved off of Yeti Zombie. He just loves knitting. When those needles are in his hands, he feels a sense of calm he's never felt before.",
+    "zh": "雪人小鬼最近开始编织了。他从围巾开始，到手套，最后用从雪人僵尸身上剃下来的头发编织了一整套连体服。他就是喜欢编织。当针在他手中时，他感到一种前所未有的平静。"
+   }
+  },
+  {
+   "codename": "treasureyeti",
+   "name": {
+    "en": "Treasure Yeti",
+    "zh": "宝藏雪人"
+   },
+   "change": "完全免疫冰冻与减速",
+   "intro": {
+    "en": "A rare and curious creature, he always packs with treasures.",
+    "zh": "罕见且稀奇的生物，经常带着一些宝物。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "runs away after a short while",
+      "zh": "进场一段时间后就撤离"
+     }
+    },
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "carries treasure",
+      "zh": "携带宝物"
+     }
+    }
+   ],
+   "chat": {
+    "en": "The rare and wondrous Yeti carries his lunch box up and down Mount Brainer to his isolated mountain lodge.",
+    "zh": "罕见而奇妙的雪人提着午餐盒，在脑山上下往返，前往他那与世隔绝的山间小屋。"
+   }
+  },
+  {
+   "codename": "eighties_glitter",
+   "name": {
+    "en": "Glitter Zombie",
+    "zh": "闪耀僵尸"
+   },
+   "change": "踩到地刺直接被秒",
+   "intro": {
+    "en": "Trails glamorous rainbows that protect zombies behind her when she's feeling the beat.",
+    "zh": "感受到属于她的节奏时，映射出彩虹保护身后的僵尸。。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Damage",
+      "zh": "攻击"
+     },
+     "desc": {
+      "en": "crushes plants with her wheels during her jam",
+      "zh": "在属于她的音乐下，用滑轮碾压植物"
+     }
+    }
+   ],
+   "chat": {
+    "en": "Glitter Zombie inspires zombies everywhere to boogie their brains out, whether it's just one moment or maybe forever, or at least until the lights come on and they're kicking everybody out.",
+    "zh": "闪耀僵尸激励世界各地的僵尸们尽情狂欢，不管是一瞬间还是永远，或者至少是在灯光亮起，在清扫工把他们都赶走之前。"
+   }
+  },
+  {
+   "codename": "eighties_mc",
+   "name": {
+    "en": "MC Zom-B",
+    "zh": "麦克说唱家"
+   },
+   "change": "甩完麦克风后自己当场倒下",
+   "intro": {
+    "en": "Spins microphone to damage nearby plants when he's dropping his sick, sick rhymes.",
+    "zh": "尽情说唱时，顺便甩动麦克风攻击周围的植物。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Damage",
+      "zh": "攻击"
+     },
+     "desc": {
+      "en": "destroys plants in a 3x3 area",
+      "zh": "摧毁周围 3x3 范围的植物"
+     }
+    }
+   ],
+   "chat": {
+    "en": "MC Zom-B doesn't want you to know it, but his fancy bling is really just gold-plated zinc he got from his grandma.",
+    "zh": "麦克说唱家并不想让你知道，他那华丽的金饰其实只是他从奶奶那里得到的镀金锌。"
+   }
+  },
+  {
+   "codename": "eighties_breakdancer",
+   "name": {
+    "en": "Breakdancer Zombie",
+    "zh": "霹雳舞僵尸"
+   },
+   "change": "一次只踢飞一只，踢完自扣 50 血",
+   "intro": {
+    "en": "Kicks zombies forward when transported by the power of rap.",
+    "zh": "说唱声带来的带感节奏，使他精力充沛地把僵尸往前推进。"
+   },
+   "special": [],
+   "chat": {
+    "en": "Delivers only the freshest moves at bargain basement prices.",
+    "zh": "只以低的代价展现最新鲜的动作。"
+   }
+  },
+  {
+   "codename": "eighties_8bit",
+   "name": {
+    "en": "8-Bit Zombie",
+    "zh": "像素僵尸"
+   },
+   "change": "每秒承受 10 点直击本体的真实伤害，护甲拦不住",
+   "intro": {
+    "en": "Pixelated zombie generated by super cool arcade machine. Comes in regular, cone, and bucket flavors.",
+    "zh": "由超酷街机生成的像素僵尸，普通、路障和铁桶都有。"
+   },
+   "special": [],
+   "chat": {
+    "en": "Being made out of light and positional co-ordinates has no effect on this erzatz zombie's ravenous hunger for tangy brains.",
+    "zh": "把僵尸变成光和像素并不能影响他对美味大脑的贪婪渴求。"
+   }
+  },
+  {
+   "codename": "eighties_gargantuar",
+   "name": {
+    "en": "Hair Metal Gargantuar",
+    "zh": "重金属巨尸"
+   },
+   "change": "舞台效果期间减伤 50%，且不再发射音波斩",
+   "intro": {
+    "en": "Dominating leviathan of power-rocking mayhem.",
+    "zh": "震撼人心的力量型巨尸。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Damage",
+      "zh": "攻击"
+     },
+     "desc": {
+      "en": "crushes plants with guitar",
+      "zh": "用电吉他摧毁植物"
+     }
+    },
+    {
+     "name": {
+      "en": "Damage",
+      "zh": "攻击"
+     },
+     "desc": {
+      "en": "bashes sonic blast when metal music plays",
+      "zh": "当重金属音乐响起时，砸出震耳欲聋的音波"
+     }
+    },
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "launches Impunk when damaged",
+      "zh": "受重伤时丢出朋克小鬼"
+     }
+    }
+   ],
+   "chat": {
+    "en": "Hair Metal Gargantuar only knows one chord, but you'd better believe he'll play it all night and then some.",
+    "zh": "重金属巨尸只懂和弦，但你最好相信他会弹吉他，否则他要弹上一整晚甚至更久。"
+   }
+  },
+  {
+   "codename": "sky_battleplane",
+   "name": {
+    "en": "Battleplane Zombie",
+    "zh": "战斗机僵尸"
+   },
+   "change": "会被脉冲黄桃瘫痪并强制坠地",
+   "intro": {
+    "en": "Attack your plants and ship with the machine gun on his plane.",
+    "zh": "使用战斗机上的机枪攻击植物和飞船。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Weakness",
+      "zh": "弱点"
+     },
+     "desc": {
+      "en": "lobbed projectiles or poison directly damage the imp driver",
+      "zh": "投掷的子弹或毒能直接伤害到小鬼驾驶员"
+     }
+    }
+   ],
+   "chat": {
+    "en": "To become an excellent fighter, he studied a total of 97 flight courses, passed 81 exams, and underwent 101 simulated flight drills during his time at flight school... He always talks endlessly to others about his superb flying skills, but the zombies who have ridden in his plane seem unwilling to bring up this topic again.",
+    "zh": "为了成为一名优秀的战斗机僵尸，在飞行学校学习期间，他总共学习了97门飞行课程、通过了81场考试、经历了101场模拟飞行演练……他总是滔滔不绝地和别人提起自己高超的飞行技术，不过坐过他的飞机的僵尸似乎都不愿意再次提及这个话题。"
+   }
+  },
+  {
+   "codename": "sky_dronemaker",
+   "name": {
+    "en": "Drone Engineer",
+    "zh": "无人机工程师"
+   },
+   "change": "会被脉冲黄桃瘫痪并强制坠地",
+   "intro": {
+    "en": "Crafts and throws armors with drones to other zombies.",
+    "zh": "制作并向其他僵尸投出带有无人机的盔甲。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "drones will equip basic zombies with helmets and use them as strongholds for its further actions",
+      "zh": "无人机将给一般的僵尸戴上头盔，并以其为据点行动"
+     }
+    },
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "drones frequently leave their strongholds, fly towards plants on the lawn, and damage them",
+      "zh": "无人机会时常离开据点，飞向场上的植物并啃食"
+     }
+    }
+   ],
+   "chat": {
+    "en": "Obviously, instead of having drones slowly come over from their air base, it's better to charge straight into the fray, making and sending the drones right on the spot!",
+    "zh": "很显然，与其让无人机从基地慢悠悠地飞过来，不如冲锋陷阵，现场组装分发无人机！"
+   }
+  },
+  {
+   "codename": "sky_imp",
+   "name": {
+    "en": "Imp Paratrooper",
+    "zh": "伞兵小鬼"
+   },
+   "change": "血量 95；会被脉冲黄桃瘫痪并强制坠地",
+   "intro": {
+    "en": "Parachute directly into your ship and proceed rightwards.",
+    "zh": "空降直至你的飞船中，并向右行进。"
+   },
+   "special": [],
+   "chat": {
+    "en": "Imp Paratrooper is actually not good at landing and falls every time, but his greatest achievement is inventing the self-storing parachute.",
+    "zh": "伞兵小鬼的实际上不善于着陆，每次都摔一跤，但实际上他最伟大的成就是发明了可以自动收纳的降落伞。"
+   }
+  }
+ ],
+ "bosses": [
+  {
+   "codename": "kongfu_boss_explode",
+   "name": {
+    "en": "Devil of Dynamite",
+    "zh": "火药魔头"
+   },
+   "change": "改名：火药魔头 → 万户（明代万户，火箭先驱）。战斗数值不动。",
+   "intro": {
+    "en": "The first of the Big Three to arrive at your lawn, leading an army of kongfu zombies.",
+    "zh": "最先到访你的前院的武林巨头，引领着所有武斗僵尸。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "lobbed bombs destroy plants in a 3x3 area if their targets are not shoveled in time",
+      "zh": "如果没能及时铲除目标，丢出的炸弹将摧毁 3x3 范围内的植物"
+     }
+    },
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "summon Rocket Imps, both launched from the right and lobbed from his back",
+      "zh": "从背后丢出或从场外召唤出火箭小鬼"
+     }
+    }
+   ],
+   "chat": {
+    "en": "As the third-in-command of the Big Three, Devil of Dynamite excels in diplomacy. Dr.Zomboss took advantage of this, forging an alliance with all the zombies at Kongfu Temple, and even developing a new method to open a space-time portal.",
+    "zh": "作为武林三巨头的三把手，火药魔头最擅长外交。僵尸博士利用这一点与少林寺的所有僵尸达成共识，甚至研究出打开时空大门的新方法。"
+   }
+  },
+  {
+   "codename": "kongfu_boss_blade",
+   "name": {
+    "en": "Blade-Wielding Hero",
+    "zh": "持刀大侠"
+   },
+   "change": "改名：持刀大侠 → 李逵（水浒黑旋风）。战斗数值不动。",
+   "intro": {
+    "en": "The second of the Big Three to arrive at your lawn, leading an army of kongfu zombies.",
+    "zh": "第二位到访你的前院的武林巨头，引领着大量的武僧和武斗僵尸。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "blocks off all damages on while his blade is flying across your defence",
+      "zh": "在把大刀丢向你的防线期间，会将所有伤害吸收"
+     }
+    }
+   ],
+   "chat": {
+    "en": "As the second-in-command of the Big Three, Blade-Wielding Hero has a slight grasp of qigong. He often infuses his weapons with qigong to strengthen his control over them, acting like \"man and weapon in one\".",
+    "zh": "作为武林三巨头的二把手，持刀大侠稍微会一点气功。经常把气功注入到他的武器中加强自己对武器的掌控，到达“人兵合一”的领域。"
+   }
+  },
+  {
+   "codename": "kongfu_boss_chi",
+   "name": {
+    "en": "Qigong Master",
+    "zh": "气功教主"
+   },
+   "change": "改名：气功教主 → 张角（黄巾起义），文案必须带「苍天已死，黄天当立」。战斗数值不动。",
+   "intro": {
+    "en": "The third and the last of the Big Three to arrive at your lawn, leading an army of abbot zombies.",
+    "zh": "第三位到访你的前院的武林巨头，也是最后一位，引领着大量的住持僵尸。"
+   },
+   "special": [
+    {
+     "name": {
+      "en": "Special",
+      "zh": "特点"
+     },
+     "desc": {
+      "en": "on recovering from stun effect, uses Golden Bell Shield to protect himself for a while.",
+      "zh": "在眩晕结束后，会使用金钟罩保护自己一段时间"
+     }
+    }
+   ],
+   "chat": {
+    "en": "As the top leader of the Big Three, Qigong Master laid the foundation for the entire kongfu area. Mastering Qigong is the ultimate realm of learning kongfu, while Qigong Master grasped this early on, founding the Qigong Sect! As the sect spread, abbots and bronzes gradually became undefeated powerhouses all over China.",
+    "zh": "作为武林三巨头的一把手，气功教主奠定了整个功夫界的根基。掌握气功本就是学习功夫的最终境地，气功教主却很早就领悟这一点并开创了气功教！随着气功教的传播，住持僵尸和铜人也逐渐成为了打遍天下无敌手的存在。"
+   }
+  }
+ ],
+ "missing": []
+}

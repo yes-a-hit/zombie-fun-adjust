@@ -1,0 +1,153 @@
+{
+ "kids": [
+  {
+   "codename": "tutorial_imp",
+   "line": {
+    "en": "Imp's job is teaching: he demonstrates how five peas take down a zombie, with impeccable form and perfect attendance.",
+    "zh": "小鬼的主要工作是教学：示范怎么被五发豌豆打倒，动作标准，从不请假。"
+   }
+  },
+  {
+   "codename": "modern_superfanimp",
+   "line": {
+    "en": "Super-Fan Imp spent all of his stamina on cheering. What is left is enough for five peas and nothing more.",
+    "zh": "狂热粉丝小鬼把全部体力都花在应援上了，剩下的部分只够撑五发豌豆。"
+   }
+  },
+  {
+   "codename": "sportzball_imp",
+   "line": {
+    "en": "Soccer Imp wears the full kit. The shin guards are cardboard. He is substituted before the whistle.",
+    "zh": "足球小鬼一身队服，护腿板是纸做的——裁判还没吹哨，他就已经下场了。"
+   }
+  },
+  {
+   "codename": "egypt_imp",
+   "line": {
+    "en": "Imp Mummy is wrapped in three thousand years of bandages. They are excellent against damp and useless against peas.",
+    "zh": "木乃伊小鬼裹了三千年的绷带，防潮，不防豌豆，一撕就开。"
+   }
+  },
+  {
+   "codename": "pirate_imp",
+   "line": {
+    "en": "Imp Pirate Zombie believes his eyepatch will stop a bullet. It has been proven to stop sunlight.",
+    "zh": "海盗小鬼相信木板眼罩能挡子弹，事实证明它只挡得住阳光。"
+   }
+  },
+  {
+   "codename": "future_imp",
+   "line": {
+    "en": "Bug Bot Imp's plating is a demo build. The lower half shipped; the upper half is still crowdfunding.",
+    "zh": "机械虫小鬼的装甲是演示版，只装了下半身，上半身还在众筹。"
+   }
+  },
+  {
+   "codename": "dark_imp_dragon",
+   "line": {
+    "en": "Imp Dragon Zombie's fire is real. His body is paper. He catches himself faster than he catches plants.",
+    "zh": "火龙小鬼的火是真的，身子是纸糊的，点着自己比点着植物还快。"
+   }
+  },
+  {
+   "codename": "dark_imp",
+   "line": {
+    "en": "Imp Monk Zombie keeps a vow against killing. The plants keep a simpler vow: five peas.",
+    "zh": "僧侣小鬼守戒不杀生，植物守着一个更简单的戒：五发豌豆。"
+   }
+  },
+  {
+   "codename": "beach_imp",
+   "line": {
+    "en": "Imp Mermaid Zombie is out of water and dragging a tail. Two steps and he is winded; five peas settle it.",
+    "zh": "美人鱼小鬼离了水，尾巴拖在地上，走两步就喘，五发豌豆足够。"
+   }
+  },
+  {
+   "codename": "iceage_imp",
+   "line": {
+    "en": "Yeti Imp is a legend in the snow and merely a snowman on a lawn. He shrugs off freezing. He does not shrug off five peas.",
+    "zh": "雪人小鬼在雪里是神话，在草坪上只是个雪人；他连冰冻都不怕，却挡不住五发豌豆。"
+   }
+  },
+  {
+   "codename": "lostcity_impporter",
+   "line": {
+    "en": "Imp Porter Zombie carries the entire tent. The tent outweighs him, which is why he no longer bothers dodging.",
+    "zh": "搬运工小鬼背着整座帐篷，帐篷比他还沉，压得他懒得躲。"
+   }
+  },
+  {
+   "codename": "lostcity_imp",
+   "line": {
+    "en": "Lost City Imp Zombie grew used to an undisturbed ruin. One pea is enough to reintroduce him to the world.",
+    "zh": "失落之城小鬼习惯了没人打扰的废墟，一株豌豆就够他重新认识世界。"
+   }
+  },
+  {
+   "codename": "kongfu_rocket_imp",
+   "line": {
+    "en": "Rocket Imp's thruster works once. The landing hurts more than the plants do.",
+    "zh": "火箭小鬼的推进器只够飞一次，落地那一下比植物打的还疼。"
+   }
+  },
+  {
+   "codename": "monk_imp",
+   "line": {
+    "en": "Kongfu Monk Imp trained ten years in iron qigong. The one technique his master skipped was blocking peas.",
+    "zh": "武僧小鬼练了十年硬气功，师父唯一没教的是怎么挡豌豆。"
+   }
+  },
+  {
+   "codename": "abbot_imp",
+   "line": {
+    "en": "Abbot Imp handles the chanting. The sutra is long, and it ends at exactly the fifth pea.",
+    "zh": "住持小鬼负责念经，经文很长，念到第五发豌豆的时候正好念完。"
+   }
+  },
+  {
+   "codename": "eighties_imp",
+   "line": {
+    "en": "Impunk's spikes are glued on. He turns the volume all the way up; his body did not come along.",
+    "zh": "朋克小鬼的钉子全是粘上去的，音量开到最大，身体没跟上。"
+   }
+  },
+  {
+   "codename": "dino_imp",
+   "line": {
+    "en": "Jurassic Imp is wearing borrowed hide. The original owner could take far more punishment.",
+    "zh": "侏罗纪小鬼身上那层皮是借来的，原主人比它耐揍得多。"
+   }
+  },
+  {
+   "codename": "sky_imp",
+   "line": {
+    "en": "Imp Paratrooper falls over on every landing. After that, the plants rarely need to help.",
+    "zh": "伞兵小鬼每次着陆都摔一跤，摔完这一下，基本不用植物再动手。"
+   }
+  }
+ ],
+ "titles": [
+  {
+   "codename": "kongfu_boss_explode",
+   "title": {
+    "en": "The First Man to Aim Upward",
+    "zh": "第一个想上天的人"
+   }
+  },
+  {
+   "codename": "kongfu_boss_blade",
+   "title": {
+    "en": "Two Axes, One Airborne",
+    "zh": "两把板斧，一把在飞"
+   }
+  },
+  {
+   "codename": "kongfu_boss_chi",
+   "title": {
+    "en": "The Blue Sky Is Dead, the Yellow Sky Rises",
+    "zh": "苍天已死，黄天当立"
+   }
+  }
+ ]
+}

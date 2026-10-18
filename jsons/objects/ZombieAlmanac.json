@@ -1,0 +1,1158 @@
+{
+  "objects": [
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "kongfu_boss_explode"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "The third seat of the Big Three, and the first of them to arrive on your lawn, leading an army of kongfu zombies. He travels in a chair with rockets strapped to it. This time, nobody lit them.",
+          "zh": "武林三巨头的三把手，最先到访你的前院，领着所有武斗僵尸。他坐在一把绑满火箭的椅子上，稳稳地挪过来——这一次他没让人点火。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "lobbed bombs destroy plants in a 3x3 area if their targets are not shoveled in time",
+              "zh": "如果没能及时铲除目标，丢出的炸弹将摧毁 3x3 范围内的植物"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "summons Rocket Imps, both launched from off-screen and lobbed from his back",
+              "zh": "从背后丢出或从场外召唤出火箭小鬼"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "Wan Hu of the Ming dynasty, the first human being to attempt spaceflight by rocket. His chair is a faithful reproduction of the original, tied somewhat more loosely",
+              "zh": "明代万户，人类第一个想靠火箭上天的人。他坐的这把椅子就是当年那件作品的复刻版，只是这次绑得松了些"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "The third seat of the Big Three, and the only one whose chair has ever left the ground. He once strapped himself to it with forty-seven rockets and asked a friend to light them. It is generally agreed that the flight was a success, in that he was, briefly, no longer standing on the lawn. He now handles diplomacy, since he can talk to anyone: monks about gunpowder, abbots about chair ergonomics, Dr. Zomboss about scheduling the next launch.",
+          "zh": "三把手里他排最后，论胆子他排第一。当年他把自己绑在椅子上，椅子后面绑了四十七支火箭，然后请人点火——那是人类第一次试图靠火箭上天。现在他负责外交，因为跟谁都能聊：跟武僧聊火药配方，跟住持聊椅子的人体工学，跟僵尸博士聊下一次点火排在哪天。他本人表示那次飞行是成功的：至少他确实离开了地面。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "kongfu_boss_blade"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "The second seat of the Big Three, arriving second on your lawn with a large company of monks and kongfu zombies. He carries two axes. One stays in his hand; the other does not.",
+          "zh": "武林三巨头的二把手，第二位到访你的前院，领着大量武僧和武斗僵尸。他带两把板斧：一把留在手里，一把飞出去。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "absorbs all damage while his axe is flying across your defence",
+              "zh": "在把板斧掷向你的防线期间，会吸收所有伤害"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "the second seat, earned with two axes and a working knowledge of qigong",
+              "zh": "二把手。位置是两把板斧换来的，外加一点够用的气功"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "The second seat was earned with two axes: one for plants, one as a spare, because the first one tends to stay in the plant. He does not raise his hand in meetings; he simply shouts, and the meeting generally agrees with him. He knows a little qigong, which he infuses into his axes to achieve 'man and weapon as one' — mostly because the axes are too heavy to swing otherwise. Asked why he never challenges for the top seat, he says that job requires talking, and he does not do that.",
+          "zh": "二把手的位置是两把板斧挣来的。一把砍植物，一把备用，因为第一把经常卡在植物里拔不出来。他开会从不举手，直接喊，喊完会议一般就通过了。他稍微会一点气功，把气灌进斧子里，说是「人兵合一」，实际上是因为斧子太重，不灌点气抡不动。有人问他为什么不争一把手，他说那个位子要会讲话，他不会。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "kongfu_boss_chi"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "The first seat of the Big Three, and the last of them to arrive, leading a great many abbot zombies. He announces that the Blue Sky is dead and the Yellow Sky should take its place, and only then begins the assault.",
+          "zh": "武林三巨头的一把手，也是最后一位到场，领着大量住持僵尸。出场先喊一句「苍天已死，黄天当立」，喊完才开始打。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "on recovering from a stun effect, uses the Golden Bell Shield to protect himself for a while",
+              "zh": "在眩晕结束后，会使用金钟罩保护自己一段时间"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "The first seat. He did not fight his way up: he got there with a slogan that has aged remarkably well, plus the organizational skill to split his followers into thirty-six divisions, each with its own commander.",
+              "zh": "一把手。坐上去靠的不是拳头，是那句流传了千年的口号，以及分三十六方、各立渠帅的组织能力"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "The top seat was not taken by force. It was taken by volume. He stood up one day and announced that the Blue Sky was dead and the Yellow Sky should take its place, then divided his followers into thirty-six divisions, each with its own commander, and ran the uprising like a franchise opening. He also healed the sick with blessed water; results varied, the queue did not. He still opens every appearance with those eight characters. Asked whether he might update the wording, he says that would be the end of the recruitment drive.",
+          "zh": "一把手。他的位置不是打出来的，是喊出来的。当年他站出来说了一句「苍天已死，黄天当立」，然后把信众分成三十六方，各立渠帅，一场起义组织得像连锁店同时开业。他还会用符水治病，效果因人而异，但排队的人从没少过。如今他领着住持僵尸出场，开场白还是那八个字，一个字都没改。他说改了就没法招人了。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "dark_king"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "Grants knight helms to nearby peasant zombies. He no longer arrives invincible: he arrives with 200 temporary health, and every knighthood costs him 150 of it.",
+          "zh": "为附近的农夫僵尸授予骑士头盔。出场时不再无敌，头上先顶着 200 点临时血量，每册封一位骑士还要从自己身上划走 150 点。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "grants knight helms to nearby peasant zombies",
+              "zh": "为附近的农夫僵尸授予骑士头盔"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "no longer invincible on arrival: 200 temporary health, and 150 lost to each knighthood",
+              "zh": "出场不再无敌：临时血量 200，每册封一位骑士自扣 150 点"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "Zombie King has always considered himself a generous monarch. He is, in fact, generous: every time he knights someone, he generously deducts 150 health from himself. He used to arrive invincible, so nobody bothered to keep the books. Now he arrives with 200 temporary health, and the chamberlain has to remind him that the treasury can afford three more knighthoods at most. His Majesty maintains that a crown is worth more than blood, and that blood grows back.",
+          "zh": "国王僵尸一直认为自己是个慷慨的君主。他确实很慷慨——每册封一位骑士，他都会从自己身上慷慨地划走 150 点血。以前他出场是无敌的，那会儿没人记账；现在他一到场就带着 200 点临时血量，礼宾司不得不小声提醒：陛下，库存只够再封三位了。他本人表示，王冠比血贵，而血是会再长的。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "dark_king_veteran"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "Grants knight helms to every nearby zombie but himself. He no longer arrives invincible: he brings 300 temporary health, and each knighthood takes 150 of it.",
+          "zh": "为附近的僵尸授予骑士头盔，除了自己。出场时不再无敌，带着 300 点临时血量，每册封一位自扣 150 点。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "grants knight helms to nearby zombies, any kind but himself",
+              "zh": "为附近的僵尸授予骑士头盔，除了自己"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "no longer invincible on arrival: 300 temporary health, and 150 lost to each knighthood",
+              "zh": "出场不再无敌：临时血量 300，每册封一位自扣 150 点"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "Arthur King Zombie's round table seats twenty-four, but he never sits down — he knights standing up, which he insists is tradition. Each knighthood costs him 150 health, and the 300 he arrives with is the whole of his estate. Advisors suggest knighting fewer people. He says chivalry does not come with a discount. Staff report that the sword from the Lady of the Lake was recently pawned, and the proceeds will cover two more knights.",
+          "zh": "亚瑟王僵尸的圆桌有二十四个座位，但他从不落座——授爵要站着，他说这是传统。每授一位，他自扣 150 点血，出场时那 300 点就是他全部的家底。有人劝他少封几个，他说骑士精神不打折。据工作人员称，湖中仙女给的那把剑最近被当掉了，换回来的血够再封两位。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "dark_juggler"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "Catches projectiles thrown at him and returns them. While spinning he speeds up, and loses 20 health per second. The audience calls this showmanship.",
+          "zh": "把砸向他的弹射物接住，再丢回来。转起来之后他会越走越快，同时每秒从自己身上掉 20 点血——观众管这叫演出效果。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特殊"
+            },
+            "DESCRIPTION": {
+              "en": "speeds up while spinning",
+              "zh": "旋转时会加速行进"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Weakness",
+              "zh": "弱点"
+            },
+            "DESCRIPTION": {
+              "en": "attacks from bubbles or flame",
+              "zh": "来自火焰或者泡泡的攻击"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "loses 20 health per second for as long as he keeps spinning",
+              "zh": "旋转期间每秒自扣 20 点血"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "Jester Zombie's spin is an art form. Art does not pay the bills, it makes him dizzy, and it costs him 20 health per second in admission fees. He holds a Master of Fine Arts from the Chewliard Performing Arts School and has shared a stage with the finest classical companies this side of the lawn. He says the trick to spinning is not thinking about spinning, and not thinking about the health bar. He also says the dizziness is because the audience does not appreciate art.",
+          "zh": "弄臣僵尸的旋转是一门艺术。艺术不能当饭吃，转久了还会头晕，而且每秒要自己掏 20 点血当门票。他在「咀嚼者」表演艺术学校拿过艺术硕士学位，跟这一带最好的古典剧团同台过。他说旋转的秘诀是不去想自己在转，也不去想血条。他还说头晕是因为观众不懂欣赏。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "beach_octopus"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "Throws octopi at your plants to bind them up. Each throw costs him 150 health. The octopi are his own, and so is the bill.",
+          "zh": "向你的植物投掷章鱼，把植物缠住使其无法行动。每扔出一只，他自扣 150 点血——章鱼是他自己养的，成本也归他自己。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特殊"
+            },
+            "DESCRIPTION": {
+              "en": "bound plants are passive until their octopus is destroyed",
+              "zh": "在章鱼被摧毁之前，被缠住的植物没有行动力"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "loses 150 health every time he throws an octopus",
+              "zh": "每扔一次章鱼自扣 150 点血"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "It started innocently enough: he decided to get a pet octopus. Then he loved that octopus so much he got another, and another, and another, and ended up volunteering at an octopus rescue shelter. He is now the undersea equivalent of a cat lady, and nobody dares count how many live at his house. Every octopus he throws is one of his own, which is why each throw costs him 150 health. He maintains this is not an injury. It is a school run.",
+          "zh": "事情的起因很简单：他决定养一只宠物章鱼。后来他太喜欢那只章鱼，又养了一只，一只，又一只，最后在章鱼救助站当起了志愿者。现在他是海底版的猫夫人，家里住了多少只没人敢数。他扔出去的每一只都是自家孩子，所以每扔一次他要心疼掉 150 点血。他本人表示这不叫受伤，这叫送孩子上学。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "lostcity_bug"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "The bug carries a zombie over low plants and other barriers. Its armour has been thinned from 350 to 90, so a decent volley will bring it down.",
+          "zh": "蜻蜓提着僵尸越过低矮植物和其他障碍物。护甲薄了：从 350 点削到 90 点，一轮像样的齐射就能把它打下来。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特殊"
+            },
+            "DESCRIPTION": {
+              "en": "flies low and carries its rider over low plants and other barriers",
+              "zh": "低空飞行，能把背上的僵尸举过低矮植物与其他障碍物"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "armour health cut from 350 to 90",
+              "zh": "护甲血量从 350 点降到 90 点"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "Bug Zombie and Bug make a great team. Partly because Bug gives Bug Zombie great mobility, but mostly because they share an intense disinterest in horses. Bug has recently switched to lighter armour — 350 down to 90 — on the grounds that flying fast beats taking hits. That argument was last heard shortly before the first volley. Bug maintains it simply refused to keep carrying something heavier than itself.",
+          "zh": "僵尸和蜻蜓是绝佳的搭档。部分原因是蜻蜓给了僵尸强大的机动性，但主要原因是他们都对马不感兴趣。这次蜻蜓换了一身更轻的甲，350 点削到 90 点，理由是「飞得快比扛得住重要」。这个说法在第一轮齐射之后就没再被提起。据蜻蜓本人表示，它只是不想再驮着一个比自己还重的东西飞来飞去。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "iceage_imp"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "Thrown over most of your defences, then ambles onward. It has 95 health and is completely immune to freezing and slowing. To him, ice plants are air conditioning.",
+          "zh": "被丢出越过你的防线，然后再继续往前走。血量 95，并且完全免疫冰冻与减速——冰系植物对他来说只是凉快。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特殊"
+            },
+            "DESCRIPTION": {
+              "en": "thrown over most of your defences, then ambles onward",
+              "zh": "被投掷越过大部分防线后继续行进"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "95 health",
+              "zh": "血量 95"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "completely immune to freezing and slowing effects",
+              "zh": "完全免疫冰冻与减速"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Yeti Imp is a legend in the snow and merely a snowman on a lawn. He shrugs off freezing. He does not shrug off five peas.",
+              "zh": "雪人小鬼在雪里是神话，在草坪上只是个雪人；他连冰冻都不怕，却挡不住五发豌豆。"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "Yeti Imp has taken up knitting. He started with a scarf, moved on to mittens, and eventually knitted an entire bodysuit out of hair shaved off Yeti Zombie. The suit is very warm, which does not explain why ice does nothing to him: he simply cannot feel cold. Snow Peas hit him and he assumes someone is being considerate. He says the immunity is a gift and the knitting is a hobby, and the two are entirely unrelated.",
+          "zh": "雪人小鬼最近开始编织。他从围巾开始，织到手套，最后用从雪人僵尸身上剃下来的毛织了一整套连体服。这套衣服很暖和，但这解释不了他为什么不怕冰——他根本感觉不到冷，冰豌豆打在身上，他只当是有人在给他降温。他本人表示，免疫冰冻是天赋，穿毛衣是爱好，两者没有任何关系。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "treasureyeti"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "A rare and curious creature that carries treasure and leaves after a short while. It is completely immune to freezing and slowing, so ice will not be what keeps it on the lawn.",
+          "zh": "罕见而稀奇的生物，随身带着宝物，进场待一会儿就走。它完全免疫冰冻与减速，想靠冰系植物把它留下是行不通的。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "runs away after a short while",
+              "zh": "进场一段时间后就撤离"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "carries treasure",
+              "zh": "携带宝物"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "completely immune to freezing and slowing effects",
+              "zh": "完全免疫冰冻与减速"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "The rare and wondrous Yeti carries his lunch box up and down Mount Brainer to his isolated mountain lodge. He never travels empty-handed: the treasure and the lunch box share a bag. People have tried freezing him in place and going through it at leisure. That does not work, because cold is not something that happens to him. He says the best answer to being surrounded is to leave, and he has practised this for some years.",
+          "zh": "罕见而奇妙的雪人提着午餐盒，在脑山上下往返，回他那座与世隔绝的山间小屋。他从不空手，宝物和午餐盒装在同一个包里。有人试过把他冻在原地再慢慢翻包，没成，因为冷这件事根本不发生在他身上。他本人表示，被围住时最好的办法是走开，而不是打，这一点他已经实践了很多年。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "eighties_glitter"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "When she feels the beat, she trails a rainbow that shields the zombies behind her. The rainbow stops bullets. It does not stop spikes. She steps on one and is simply gone.",
+          "zh": "感受到属于她的节奏时，会拉出一道彩虹，保护身后的僵尸。彩虹挡得住子弹，挡不住地刺——踩上去，她当场就没了。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Damage",
+              "zh": "攻击"
+            },
+            "DESCRIPTION": {
+              "en": "crushes plants with her wheels during her jam",
+              "zh": "在属于她的音乐下，用滑轮碾压植物"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特殊"
+            },
+            "DESCRIPTION": {
+              "en": "the rainbow shields zombies behind her while she feels the beat",
+              "zh": "感受到节奏期间，彩虹会保护她身后的僵尸"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "instantly destroyed by spikes",
+              "zh": "踩到地刺直接被秒"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "Glitter Zombie inspires zombies everywhere to boogie their brains out — for a moment, or forever, or at least until the lights come on and everybody gets kicked out. Her rainbow stops an entire row of peas and covers everyone behind her. It does nothing about the spikes under her wheels. Staff report that she never inspects the stage, only the audience. She says art does not look down.",
+          "zh": "闪耀僵尸激励世界各地的僵尸尽情狂欢，不管是一瞬间还是永远，至少到灯光亮起、清扫工把人都赶走为止。她的彩虹能挡住一整排豌豆，护住身后所有同伴，唯独挡不住脚下那排地刺。据工作人员称，她上台从不看地形，只看观众。她本人表示，艺术不该低头。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "eighties_mc"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "Spins his microphone to damage nearby plants while dropping his rhymes. When the microphone leaves his hand, so does he — not from damage, from clocking out.",
+          "zh": "尽情说唱时，顺便甩动麦克风攻击周围的植物。麦克风脱手之后他也就倒了——不是被打倒的，是收工了。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Damage",
+              "zh": "攻击"
+            },
+            "DESCRIPTION": {
+              "en": "destroys plants in a 3x3 area",
+              "zh": "摧毁周围 3x3 范围的植物"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "collapses on the spot once the microphone is thrown",
+              "zh": "甩完麦克风后自己当场倒下"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "MC Zom-B doesn't want you to know that his fancy bling is really gold-plated zinc from his grandma. He also doesn't want you to know that he drops on the spot every time he lets go of the microphone. He calls it a very deep bow. The stage manager notes that the dignified way for a rapper to leave is after the last beat; he leaves half a beat early. He says the show ends the moment the microphone leaves his hand, and it seems reasonable for him to end with it.",
+          "zh": "麦克说唱家并不想让你知道，他那华丽的金饰其实只是从奶奶那里拿的镀金锌。他也不想让你知道，每次甩完麦克风他都会当场倒下——他说那是鞠躬鞠得太深。舞台监督表示，说唱歌手最体面的退场是唱完最后一拍再走，而他每次都提前半拍。他本人表示，麦克风脱手的那一刻演出就结束了，人跟着结束也很合理。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "eighties_breakdancer"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "When the beat drops, he kicks the zombies ahead of him forward. One per kick, and each kick costs him 50 health. He supplies the moves and the invoice.",
+          "zh": "说唱的节奏一响，他就把前面的僵尸往前踢。一次只踢一只，踢完自扣 50 点血——动作是他出的，账也是他付的。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特殊"
+            },
+            "DESCRIPTION": {
+              "en": "kicks zombies forward when transported by the power of rap",
+              "zh": "被说唱的节奏带动时，把前方的僵尸往前踢"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "kicks one zombie at a time, and loses 50 health per kick",
+              "zh": "一次只踢一只，踢完自扣 50 点血"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "Breakdancer Zombie delivers only the freshest moves at bargain basement prices. The price is 50 health per kick, and each kick moves exactly one zombie, so the queue advances like a ticket line. People have suggested kicking several at once; he says that would ruin the move. Staff report that his knees should have been replaced long ago, and that he insists it is a style issue. He says dancing has tuition, and he pays his in health.",
+          "zh": "霹雳舞僵尸只以最低的代价提供最新鲜的动作。代价具体是 50 点血一脚，而且一脚只送走一只，整条队伍推进得像在排队买票。有人建议他一次多踢几个，他说那样动作会散。据工作人员称，他的膝盖早该换了，但他坚持认为那是风格问题。他本人表示，跳舞是要交学费的，他只是把学费交在了血条上。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "eighties_8bit"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "A pixelated zombie generated by a super cool arcade machine, in regular, cone and bucket flavours. It sheds 10 health per second straight to the body. Armour does not help. The armour is also made of pixels.",
+          "zh": "由超酷街机生成的像素僵尸，普通、路障、铁桶都有。它每秒漏掉 10 点血，直接扣在本体上，护甲拦不住——护甲也是像素做的。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特殊"
+            },
+            "DESCRIPTION": {
+              "en": "generated by an arcade machine, in regular, cone and bucket varieties",
+              "zh": "由街机生成，分普通、路障、铁桶三种形态"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "takes 10 direct true damage per second to the body, which armour cannot stop",
+              "zh": "每秒承受 10 点直击本体的真实伤害，护甲拦不住"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "Being made out of light and positional coordinates has no effect on this ersatz zombie's ravenous hunger for tangy brains. He leaks 10 health per second, and armour is no defence, because what he is losing is not damaged parts but resolution. The bucket version looks sturdier; it is merely more pixels, and it goes just as fast. The arcade attendant says the machine is due for servicing. He says that as long as he can still walk, image quality is not a concern.",
+          "zh": "由光和像素坐标组成这件事，并不影响这只僵尸对酸甜大脑的贪婪渴求。他每秒漏 10 点血，护甲拦不住，因为他掉的不是被打坏的部分，是分辨率。铁桶版看起来更结实，其实只是多了几层像素，掉得一样快。据街机管理员称，机器该保养了。他本人表示，只要还能走，画质不重要。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "eighties_gargantuar"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "A dominating leviathan of power-rocking mayhem. While the stage effects are running he takes 50% less damage, but the sonic blast is gone. He uses the guitar now, and only the guitar.",
+          "zh": "震撼人心的力量型巨尸。舞台效果一起，他受到的伤害减半，但音波斩没有了——他现在只用吉他砸。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Damage",
+              "zh": "攻击"
+            },
+            "DESCRIPTION": {
+              "en": "crushes plants with his guitar",
+              "zh": "用电吉他摧毁植物"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "launches Impunk when badly damaged",
+              "zh": "受重伤时丢出朋克小鬼"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "takes 50% less damage while the stage effects play, and no longer fires the sonic blast",
+              "zh": "舞台效果期间减伤 50%，且不再发射音波斩"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "Hair Metal Gargantuar never misses on stage. He does not miss now either, because he no longer plays: the sonic blast has been packed away, leaving one guitar and a lighting rig. While the lights are up he is 50% harder to hurt; when they go down he reverts to being a normal, very large problem. He says knowing only one chord is not a flaw. Playing it all night is a style.",
+          "zh": "重金属巨尸在舞台上从不失手。他现在也不失手了，因为他已经不弹了——音波斩收进了箱子，只剩一把吉他和一套舞台灯。灯亮起来的时候他很难被打动，减伤 50%；灯一灭，他就恢复成一个普通的、非常大的问题。他本人表示，只懂一个和弦不算缺点，一整晚只弹这一个和弦才叫风格。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "sky_battleplane"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "Strafes your plants and your ship with the machine gun on his plane. A pulse yellow peach paralyses him and brings him down hard. No amount of flying skill survives electricity.",
+          "zh": "用战斗机上的机枪攻击植物和飞船。脉冲黄桃一响，他就瘫痪，然后被强制坠地——飞得再好也架不住电。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Weakness",
+              "zh": "弱点"
+            },
+            "DESCRIPTION": {
+              "en": "lobbed projectiles or poison directly damage the imp driver",
+              "zh": "投掷的子弹或毒能直接伤害到小鬼驾驶员"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "paralysed by pulse yellow peaches and forced to crash",
+              "zh": "会被脉冲黄桃瘫痪并强制坠地"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "To become an excellent fighter, he studied 97 flight courses, passed 81 exams, and underwent 101 simulated drills at flight school. He talks about his superb flying skills at every opportunity; the zombies who have ridden with him seem unwilling to raise the subject again. There is now one more item on the list: a pulse yellow peach, and he goes down with the plane. His instructor notes that this was not in the curriculum. He says it is a recent addition to the syllabus.",
+          "zh": "为了成为一名优秀的战斗机僵尸，他在飞行学校学了 97 门飞行课程，通过了 81 场考试，经历了 101 场模拟飞行演练。他总跟人讲自己技术高超，不过坐过他飞机的僵尸都不愿再提这件事。现在又多了一条：脉冲黄桃一响，他连人带机栽下来。据教官称，课程里没有这一项。他本人表示，那是新加的考纲。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "sky_dronemaker"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "Builds drones and delivers armour to other zombies. A pulse yellow peach paralyses the drones and the engineer alike, and brings them down.",
+          "zh": "制作无人机，给其他僵尸投送盔甲。脉冲黄桃会让无人机和他本人一起瘫痪，然后强制坠地。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "drones equip basic zombies with helmets and use them as strongholds",
+              "zh": "无人机给一般的僵尸戴上头盔，并以其为据点行动"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "drones leave their strongholds, fly at plants on the lawn, and damage them",
+              "zh": "无人机会时常离开据点，飞向场上的植物并啃食"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "paralysed by pulse yellow peaches and forced to crash",
+              "zh": "会被脉冲黄桃瘫痪并强制坠地"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "Obviously, rather than wait for drones to trundle over from the air base, it is better to charge in and assemble them on the spot. The idea is fast on paper and fast in practice — fast enough that he is usually pressed out of the sky by a pulse yellow peach shortly after takeoff. By his own calculation, a drone survives eleven seconds from assembly to impact, eight of which are spent finding an angle. He says this is not a design flaw. It is aggressive deployment.",
+          "zh": "很显然，与其让无人机从基地慢悠悠地飞过来，不如冲锋陷阵，现场组装分发。这个思路在纸面上很快，在实战里也很快——快到他刚起飞就被脉冲黄桃按下来。据他本人计算，一架无人机从组装到坠地平均存活 11 秒，其中 8 秒在找角度。他表示这不是设计缺陷，是部署太靠前。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "sky_imp"
+      ],
+      "objdata": {
+        "Introduction": {
+          "en": "Parachutes directly into your ship and proceeds rightwards. It has 95 health, and a pulse yellow peach paralyses it mid-air, parachute and all.",
+          "zh": "直接空降到你的飞船里，然后向右行进。血量 95，脉冲黄桃一响就瘫痪，连伞带人一起掉下来。"
+        },
+        "Special": [
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特殊"
+            },
+            "DESCRIPTION": {
+              "en": "parachutes directly into your ship and proceeds rightwards",
+              "zh": "空降进入飞船后向右行进"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "95 health",
+              "zh": "血量 95"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "DESCRIPTION": {
+              "en": "paralysed by pulse yellow peaches and forced to crash",
+              "zh": "会被脉冲黄桃瘫痪并强制坠地"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Imp Paratrooper falls over on every landing. After that, the plants rarely need to help.",
+              "zh": "伞兵小鬼每次着陆都摔一跤，摔完这一下，基本不用植物再动手。"
+            }
+          }
+        ],
+        "Chat": {
+          "en": "Imp Paratrooper is not actually good at landing and falls over every time. His greatest achievement is the self-storing parachute, which saves him the packing and lets him fall over more often. With pulse yellow peaches in play he no longer gets to fall over properly: he is paralysed mid-air and drops straight down. He says this at least removes the packing step.",
+          "zh": "伞兵小鬼其实不擅长着陆，每次都摔一跤。他最伟大的成就是发明了可以自动收纳的降落伞，这让他省下了每次叠伞的时间，也让他摔得更频繁。现在有了脉冲黄桃，他连摔的资格都没有了——在半空就瘫痪，然后直着掉下去。他本人表示，这至少省掉了叠伞的步骤。"
+        }
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "tutorial_imp"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Imp's job is teaching: he demonstrates how five peas take down a zombie, with impeccable form and perfect attendance.",
+              "zh": "小鬼的主要工作是教学：示范怎么被五发豌豆打倒，动作标准，从不请假。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "modern_superfanimp"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Super-Fan Imp spent all of his stamina on cheering. What is left is enough for five peas and nothing more.",
+              "zh": "狂热粉丝小鬼把全部体力都花在应援上了，剩下的部分只够撑五发豌豆。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "egypt_imp"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Imp Mummy is wrapped in three thousand years of bandages. They are excellent against damp and useless against peas.",
+              "zh": "木乃伊小鬼裹了三千年的绷带，防潮，不防豌豆，一撕就开。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "pirate_imp"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Imp Pirate Zombie believes his eyepatch will stop a bullet. It has been proven to stop sunlight.",
+              "zh": "海盗小鬼相信木板眼罩能挡子弹，事实证明它只挡得住阳光。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "future_imp"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Bug Bot Imp's plating is a demo build. The lower half shipped; the upper half is still crowdfunding.",
+              "zh": "机械虫小鬼的装甲是演示版，只装了下半身，上半身还在众筹。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "dark_imp_dragon"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "name": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "desc": {
+              "en": "immune to fire damage",
+              "zh": "无法受到火焰伤害"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Imp Dragon Zombie's fire is real. His body is paper. He catches himself faster than he catches plants.",
+              "zh": "火龙小鬼的火是真的，身子是纸糊的，点着自己比点着植物还快。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "dark_imp"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Imp Monk Zombie keeps a vow against killing. The plants keep a simpler vow: five peas.",
+              "zh": "僧侣小鬼守戒不杀生，植物守着一个更简单的戒：五发豌豆。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "beach_imp"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Imp Mermaid Zombie is out of water and dragging a tail. Two steps and he is winded; five peas settle it.",
+              "zh": "美人鱼小鬼离了水，尾巴拖在地上，走两步就喘，五发豌豆足够。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "lostcity_impporter"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "name": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "desc": {
+              "en": "pack becomes tent from which zombies emerge",
+              "zh": "背包会在原地搭起帐篷，源源不断地钻出僵尸"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Imp Porter Zombie carries the entire tent. The tent outweighs him, which is why he no longer bothers dodging.",
+              "zh": "搬运工小鬼背着整座帐篷，帐篷比他还沉，压得他懒得躲。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "lostcity_imp"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Lost City Imp Zombie grew used to an undisturbed ruin. One pea is enough to reintroduce him to the world.",
+              "zh": "失落之城小鬼习惯了没人打扰的废墟，一株豌豆就够他重新认识世界。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "kongfu_rocket_imp"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "name": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "desc": {
+              "en": "strikes into you lawn until blocked by a plant",
+              "zh": "突然冲进你的草坪，直到被植物挡住"
+            }
+          },
+          {
+            "name": {
+              "en": "Weakness",
+              "zh": "弱点"
+            },
+            "desc": {
+              "en": "chilly attacks force him to land, then fire attacks launch him away",
+              "zh": "火箭会被冷冻攻击打断，再被火焰攻击点燃时直接离场"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Rocket Imp's thruster works once. The landing hurts more than the plants do.",
+              "zh": "火箭小鬼的推进器只够飞一次，落地那一下比植物打的还疼。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "monk_imp"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "name": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "desc": {
+              "en": "frequently hops up and flies past most of your defences",
+              "zh": "经常跳起并悬浮在空中，越过你的大部分植物"
+            }
+          },
+          {
+            "name": {
+              "en": "Weakness",
+              "zh": "弱点"
+            },
+            "desc": {
+              "en": "can be blocked by Tall-nuts while flying",
+              "zh": "飞行时会被高坚果阻挡"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Kongfu Monk Imp trained ten years in iron qigong. The one technique his master skipped was blocking peas.",
+              "zh": "武僧小鬼练了十年硬气功，师父唯一没教的是怎么挡豌豆。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "abbot_imp"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "name": {
+              "en": "Special",
+              "zh": "特点"
+            },
+            "desc": {
+              "en": "swiftly enters your lawn and repels all projectiles",
+              "zh": "快速进入你的草坪，排开所有的弹射物"
+            }
+          },
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Abbot Imp handles the chanting. The sutra is long, and it ends at exactly the fifth pea.",
+              "zh": "住持小鬼负责念经，经文很长，念到第五发豌豆的时候正好念完。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "eighties_imp"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Impunk's spikes are glued on. He turns the volume all the way up; his body did not come along.",
+              "zh": "朋克小鬼的钉子全是粘上去的，音量开到最大，身体没跟上。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "ZombieAlmanacProperties",
+      "aliases": [
+        "dino_imp"
+      ],
+      "objdata": {
+        "Special": [
+          {
+            "NAME": {
+              "en": "Update",
+              "zh": "更新"
+            },
+            "DESCRIPTION": {
+              "en": "Jurassic Imp is wearing borrowed hide. The original owner could take far more punishment.",
+              "zh": "侏罗纪小鬼身上那层皮是借来的，原主人比它耐揍得多。"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

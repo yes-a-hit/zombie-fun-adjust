@@ -1,0 +1,222 @@
+{
+  "objects": [
+    {
+      "objclass": "NarrativeProperties",
+      "aliases": [
+        "KONGFU_INTRO_BOSS2"
+      ],
+      "objdata": {
+        "Flow": [
+          {
+            "Character": "zombossicon",
+            "Action": "NPC_ENTER"
+          },
+          {
+            "Character": "zombossicon",
+            "Action": "SAY",
+            "Lines": {
+              "en": "Bad news for you.",
+              "zh": "告诉你一个坏消息。"
+            }
+          },
+          {
+            "Character": "zombossicon",
+            "Action": "SAY",
+            "Lines": {
+              "en": "Wan Hu wasn't the only ally I've been cooperating with.\nDr. Zomboss",
+              "zh": "在这里与我合作的盟友可不止万户一人。\n——僵尸博士"
+            }
+          },
+          {
+            "Character": "zombossicon",
+            "Action": "NPC_EXIT"
+          },
+          {
+            "Character": "winnie",
+            "Action": "NPC_ENTER"
+          },
+          {
+            "Character": "winnie",
+            "Action": "SAY",
+            "Lines": {
+              "en": "Get prepared. An enemy with unparalleled skill is on his way.",
+              "zh": "做好准备，一位绝世高手正在赶来的路上。"
+            }
+          },
+          {
+            "Character": "crazydave",
+            "Action": "NPC_ENTER"
+          },
+          {
+            "Character": "crazydave",
+            "Action": "EXCITED",
+            "Lines": {
+              "en": "I've been ready to take him down since the day I was born!",
+              "zh": "我的打出生起就做好打倒他的准备了。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "NarrativeProperties",
+      "aliases": [
+        "KONGFU_INTRO_BOSS3"
+      ],
+      "objdata": {
+        "Flow": [
+          {
+            "Character": "zombossicon",
+            "Action": "NPC_ENTER"
+          },
+          {
+            "Character": "zombossicon",
+            "Action": "SAY",
+            "Lines": {
+              "en": "Now presenting, my scientific technology...",
+              "zh": "接下来将呈现的是我的科学技术……"
+            }
+          },
+          {
+            "Character": "zombossicon",
+            "Action": "SAY",
+            "Lines": {
+              "en": "...combined with the unique Qigong Sect around China.",
+              "zh": "……与武林寺庙特有的气功绝学。"
+            }
+          },
+          {
+            "Character": "zombossicon",
+            "Action": "SAY",
+            "Lines": {
+              "en": "\"The blue sky is dead, the yellow sky shall rise\" — Zhang Jiao will teach you what true MANNERS is!\nDr. Zomboss",
+              "zh": "「苍天已死，黄天当立」——张角将会让你见识什么叫真正的“气度”！\n——僵尸博士"
+            }
+          },
+          {
+            "Character": "zombossicon",
+            "Action": "NPC_EXIT"
+          },
+          {
+            "Character": "winnie",
+            "Action": "NPC_ENTER"
+          },
+          {
+            "Character": "winnie",
+            "Action": "SAY",
+            "Lines": {
+              "en": "Data indicates that the source of time-space fluctuations along with more blackholes is already near our lawn.",
+              "zh": "数据显示，时空紊乱以及黑洞的根源已经在我们的草坪附近了。"
+            }
+          },
+          {
+            "Character": "crazydave",
+            "Action": "NPC_ENTER"
+          },
+          {
+            "Character": "crazydave",
+            "Action": "TIRED",
+            "Lines": {
+              "en": "It seems there won't be a taco on the other side of the blackholes.",
+              "zh": "看样子黑洞的对面不会有玉米卷了。"
+            }
+          },
+          {
+            "Character": "winnie",
+            "Action": "TIRED",
+            "Lines": {
+              "en": "...",
+              "zh": "……"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "objclass": "NarrativeProperties",
+      "aliases": [
+        "KONGFU_OUTRO_BOSS2"
+      ],
+      "objdata": {
+        "Flow": [
+          {
+            "Character": "crazydave",
+            "Action": "NPC_ENTER"
+          },
+          {
+            "Character": "winnie",
+            "Action": "NPC_ENTER"
+          },
+          {
+            "Character": "crazydave",
+            "Action": "EXCITED",
+            "Lines": {
+              "en": "I can't believe we actually defeated that legendarily strong enemy!",
+              "zh": "我们竟然真的打败了那样的绝世高手。"
+            }
+          },
+          {
+            "Character": "crazydave",
+            "Action": "PLAYFUL",
+            "Lines": {
+              "en": "We have to celebrate such victory with a feast!",
+              "zh": "一定要举办一场盛大的宴会好好庆祝一下！"
+            }
+          },
+          {
+            "Character": "winnie",
+            "Action": "TIRED",
+            "Lines": {
+              "en": "We've got little time for this, User Dave.",
+              "zh": "我们真的没有这个时间，用户戴夫。"
+            }
+          },
+          {
+            "Character": "winnie",
+            "Action": "SAY",
+            "Lines": {
+              "en": "Kongfu Zombies' attack is still far from over.",
+              "zh": "僵尸的进攻还远远没有结束。"
+            }
+          },
+          {
+            "Character": "crazydave",
+            "Action": "NPC_EXIT"
+          },
+          {
+            "Character": "winnie",
+            "Action": "NPC_EXIT"
+          },
+          {
+            "Character": "zombossicon",
+            "Action": "NPC_ENTER"
+          },
+          {
+            "Character": "zombossicon",
+            "Action": "SAY",
+            "Lines": {
+              "en": "How surprising! Li Kui was defeated.",
+              "zh": "李逵竟然被击败了！"
+            }
+          },
+          {
+            "Character": "zombossicon",
+            "Action": "SAY",
+            "Lines": {
+              "en": "Even have I started to appreciate your strengths...",
+              "zh": "连我也欣赏起你们的实力了……"
+            }
+          },
+          {
+            "Character": "zombossicon",
+            "Action": "SAY",
+            "Lines": {
+              "en": "...in your dreams.",
+              "zh": "……骗你的。"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

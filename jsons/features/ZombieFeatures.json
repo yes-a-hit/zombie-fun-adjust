@@ -1,0 +1,25 @@
+{
+  "ZOMBIES": [
+    {
+      "CODENAME": "kongfu_boss_explode",
+      "NAME": {
+        "en": "Wan Hu",
+        "zh": "万户"
+      }
+    },
+    {
+      "CODENAME": "kongfu_boss_blade",
+      "NAME": {
+        "en": "Li Kui",
+        "zh": "李逵"
+      }
+    },
+    {
+      "CODENAME": "kongfu_boss_chi",
+      "NAME": {
+        "en": "Zhang Jiao",
+        "zh": "张角"
+      }
+    }
+  ]
+}
