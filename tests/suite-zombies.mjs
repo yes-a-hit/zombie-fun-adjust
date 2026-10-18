@@ -489,4 +489,88 @@ export function runZombies({ T, mod }) {
     // 恢复，别影响后面的断言
     T.setRefs(makeRefs())
   }
+
+  // ─────────────────────── 1.4.1 黑暗巨尸 · 击杀回血 ───────────────────────
+  section('1.4.1. 黑暗巨尸 · 击杀回血 900')
+
+  {
+    const entry = find('gargHeal')
+    const garg = new FakeZombie({ inLane: makeLane({}) })
+    garg.health = 100
+    garg.toughness = 3000
+    T.handlerGargHeal(entry, garg, [], () => {
+      // 模拟引擎：_smash 里砸死一株植物（走 Plant.kill）
+      T.handlerVictimKill({}, new FakePlant({}), [], () => {})
+    })
+    ok(garg.health === 1000, '砸死一株植物 → 回 900（100 → 1000）', String(garg.health))
+  }
+  {
+    const entry = find('gargHeal')
+    const garg = new FakeZombie({ inLane: makeLane({}) })
+    garg.health = 50
+    garg.toughness = 5000
+    T.handlerGargHeal(entry, garg, [], () => {
+      T.handlerVictimKill({}, new FakePlant({}), [], () => {})
+      T.handlerVictimKill({}, new FakeZombie({}), [], () => {})
+    })
+    ok(garg.health === 1850, '一砸两杀（植物 + 僵尸）→ 各回 900', String(garg.health))
+  }
+  {
+    const garg = new FakeZombie({ inLane: makeLane({}) })
+    garg.health = 100
+    garg.toughness = 3000
+    T.handlerVictimKill({}, new FakePlant({}), [], () => {})
+    ok(garg.health === 100, '不在 _smash 窗口里的死亡不回血（僵尸啃植物等）', String(garg.health))
+  }
+  {
+    const entry = find('gargHeal')
+    const garg = new FakeZombie({ inLane: makeLane({}) })
+    garg.health = 2900
+    garg.toughness = 3000
+    T.handlerGargHeal(entry, garg, [], () => {
+      T.handlerVictimKill({}, new FakePlant({}), [], () => {})
+    })
+    ok(garg.health === 3000, '回血不超过自身血量上限', String(garg.health))
+  }
+  {
+    ok(!!find('victimPlantKill'), '击杀捕获已挂在 Plant.kill')
+    ok(!!find('victimZombieDie'), '击杀捕获已挂在 Zombie.playDie')
+    // 1.4.0 的失效根因：身份判定依赖运行时 engine 查表
+    ok(T.CFG.gargKillHeal === 900, '回血常量 = 900', String(T.CFG.gargKillHeal))
+  }
+
+  // ─────────────────────── 1.4.1 渔夫 · 实例级钩子补丁 ───────────────────────
+  section('1.4.1. 渔夫 · 抽奖接到钩子实例上')
+
+  {
+    const z = new FakeZombie({ inLane: makeLane({}) })
+    z.worldPositionX = 500
+    let origCalls = 0
+    const hook = { owner: z, hookCall: () => { origCalls += 1; return 0.5 } }
+    z.hookShot = hook
+
+    ok(T.patchFisherHook(z) === true, '钩子实例被打上抽奖补丁')
+    ok(T.patchFisherHook(z) === false, '同一实例只打一次')
+
+    const realRandom = Math.random
+    const run = (v, plant) => {
+      Math.random = () => v
+      try { return hook.hookCall(plant === undefined ? {} : plant, null, null) } finally { Math.random = realRandom }
+    }
+
+    ok(run(0.05) === 0, '10% 分支：把自己往前拽一格（返回 0，不拉植物）')
+    ok(z.worldPositionX === 500 - 68 || z.worldPositionX === 500 + 68, '前进一格 = 一个格宽', String(z.worldPositionX))
+    ok(run(0.2) === 0, '20% 分支：自扣 100（返回 0）')
+    ok(run(0.35) === 0, '20% 分支：完全没反应（返回 0）')
+
+    const before = origCalls
+    const r = run(0.8)
+    ok(r === 0.5 && origCalls === before + 1, '其余 50% 照常拉植物（调原实现）', `ret=${r} origCalls=${origCalls - before}`)
+
+    // 空调用不掷骰
+    const rolls = T.stats.fisherRolls
+    Math.random = () => 0.05
+    try { hook.hookCall(null, null, null) } finally { Math.random = realRandom }
+    ok(T.stats.fisherRolls === rolls, '空调用不掷骰')
+  }
 }

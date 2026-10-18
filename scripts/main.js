@@ -199,15 +199,22 @@ const TARGETS = [
   //    而 onSmashing 砸空也会触发、拿不到实际目标。所以包 _smash 做「前后存活快照」。
   //    注意 throwImp 全程不发 dealDamage，扔小鬼不会杀僵尸 —— 击杀只可能来自这一锤。
   { key: 'gargHeal', label: '黑暗巨尸·击杀回血900', names: ['DarkGargantuarZombie'], module: 'chunks:///_virtual/DarkGargantuarZombie.ts', methods: ['_smash'], mode: 'gargHeal' },
+  // 1.4.1：击杀捕获。巨人砸死植物走 Plant.kill，砸死僵尸走 Zombie.playDie ——
+  // 只在这两只死亡入口上补观测，靠 smashCtx 限定「仅在巨尸这一锤的同步窗口内」计数。
+  { key: 'victimPlantKill', label: '击杀捕获·植物死亡', names: ['Plant'], module: 'chunks:///_virtual/Plant.ts', methods: ['kill'], mode: 'victimKill' },
+  { key: 'victimZombieDie', label: '击杀捕获·僵尸死亡', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['playDie'], mode: 'victimKill' },
   // 2) 投手 4 倍：投手 = CabbagePultPlant 基类（MelonPult/KernelPult/PepperPult 都继承它）。
   //    _lobToZombie 返回 Promise<prj>，原函数本就用 setDamage 改弹体伤害，照同一手法乘 4。
   { key: 'lobHeadshot', label: '投手·命中指定僵尸4倍伤害', names: ['CabbagePultPlant'], module: 'chunks:///_virtual/CabbagePultPlant.ts', methods: ['_lobToZombie'], mode: 'lobHeadshot' },
   // 3) 二类防具·电击：报纸的护甲层在 dealDamage 里，只有 armorProtection=true 才吃纸。
   //    电击 damageType = electricity(2)，据此把 armorProtection 关掉即可直击本体。
-  { key: 'paperBypass', label: '二类防具·电击绕过纸', names: ['ModernNewspaperZombie', 'ModernNewspaperVeteranZombie'], module: 'chunks:///_virtual/ModernNewspaperZombie.ts', methods: ['dealDamage'], mode: 'paperBypass' },
+  { key: 'paperBypass', label: '二类防具·电击绕过纸', names: ['ModernNewspaperZombie'], module: 'chunks:///_virtual/ModernNewspaperZombie.ts', methods: ['dealDamage'], mode: 'paperBypass' },
   // 4) 渔夫：拉植物入口是 hookCall(plant, zombie, tomb) —— 返回要拉多久。
   //    空调用（目标离开草坪 / 停用）也会进来，必须排除，否则会误掷骰。
-  { key: 'fisherGamble', label: '渔夫·拉植物改成抽奖', names: ['BeachFisherHook', 'BeachFisherZombieHook'], module: 'chunks:///_virtual/BeachFisherZombie.ts', methods: ['hookCall'], mode: 'fisherGamble' },
+  // 1.4.1 修正：`hookCall` 属于一个没有 ccclass 注册的内部 hook 类，按类名根本拿不到。
+  // 唯一可靠路径是从僵尸实例上取 `hookShot`（引擎在 _shoot 里把钩子实例挂上去），
+  // 所以改成每帧看一眼实例、给它的 hookCall 打一次性补丁 —— 实例级，不影响别的僵尸。
+  { key: 'fisherGamble', label: '渔夫·拉植物改成抽奖', names: ['BeachFisherZombie'], module: 'chunks:///_virtual/BeachFisherZombie.ts', methods: ['update', 'characterUpdate'], mode: 'fisherPatch' },
 ]
 
 /* ────────────────────── 基础设施 ────────────────────── */
@@ -1101,18 +1108,70 @@ function healZombie(z, amount) {
  * 所以「调用前后从池子里消失的对象」就是本次击杀 —— O(1) 判定，不必扫全场。
  * 被魅惑时植物分支会被跳过、只砸僵尸，与「植物或僵尸都算」天然一致。
  */
+/** 当前正在执行 _smash 的巨尸（同步窗口）。击杀捕获只在它非空时计数。 */
+let smashCtx = null
+
+/**
+ * 1. 黑暗巨尸：击杀任何单位回 900 血。
+ *
+ * 1.4.0 的写法有两个坑，1.4.1 全部修掉：
+ *  ① 原来用 `codenameInList(thisArg, ['dark_gargantuar'])` 判身份 —— 而 `zombieCodename()`
+ *     运行时要去 engine 查僵尸表，**startup 之后 engine 访问已关闭**，返回 null，
+ *     于是整条判定恒为 false，一次都没生效（就是「击杀后没回血」的真正原因）。
+ *     现在不再判身份：钩子挂在 `DarkGargantuarZombie.prototype._smash` 上，
+ *     本来就只有这一种巨人会走进来。
+ *  ② 原来只靠「行内植物/僵尸池的前后快照」判击杀 —— 但植物被砸死时还在播死亡动画，
+ *     池子里仍占着位置，前后对比等于没变化。
+ *
+ * 现在改成双保险：主路是击杀捕获（包 `Plant.kill` / `Zombie.playDie`，
+ * 只在下面这个 `smashCtx` 非空的同步窗口里计数），兜底才是池快照。
+ */
 function handlerGargHeal(entry, thisArg, args, callNext) {
   const before = poolSnapshot(thisArg)
+  const prev = smashCtx
+  const box = { z: thisArg, kills: 0 }
+  smashCtx = box
+  let r
+  try {
+    r = callNext(...args)
+  } finally {
+    smashCtx = prev
+  }
+
+  // 兜底：击杀捕获一次都没响（例如 kill/playDie 没挂上），但池子里确实少了东西
+  if (!box.kills && before) {
+    try {
+      const after = poolSnapshot(thisArg)
+      if (after) {
+        let n = 0
+        for (const o of before) if (!after.has(o)) n += 1
+        if (n > 0) {
+          box.kills = n
+          healZombie(thisArg, n * CFG.gargKillHeal)
+          noteOnce('gargHealFallback', '回血走了池快照兜底（击杀捕获未触发）')
+        }
+      }
+    } catch (err) {
+      noteOnce('gargHeal', '黑暗巨尸回血兜底判定失败：' + errText(err))
+    }
+  }
+  return r
+}
+
+/**
+ * 击杀捕获：`Plant.kill` / `Zombie.playDie` 都会经过这里。
+ * 只有「某只巨尸正在 _smash」的那一瞬才计数 —— 僵尸啃植物、其它死因一律不触发。
+ */
+function handlerVictimKill(entry, thisArg, args, callNext) {
   const r = callNext(...args)
   try {
-    if (!before || !codenameInList(thisArg, ['dark_gargantuar'])) return r
-    const after = poolSnapshot(thisArg)
-    if (!after) return r
-    let kills = 0
-    for (const o of before) if (!after.has(o)) kills += 1
-    if (kills > 0) healZombie(thisArg, kills * CFG.gargKillHeal)
+    const c = smashCtx
+    if (c && c.z) {
+      c.kills += 1
+      healZombie(c.z, CFG.gargKillHeal)
+    }
   } catch (err) {
-    noteOnce('gargHeal', '黑暗巨尸回血判定失败：' + errText(err))
+    noteOnce('victimKill', '击杀捕获失败：' + errText(err))
   }
   return r
 }
@@ -1270,6 +1329,69 @@ function moveSelfForward(z, squares) {
   }
 }
 
+/** 掷骰：返回 { taken, ret }；taken=false 表示这次按原样拉植物 */
+function fisherRoll(hook, plant) {
+  const owner = hook && hook.owner
+  if (!owner) return { taken: false }
+  stats.fisherRolls += 1
+  let roll = Math.random()
+
+  if (roll < CFG.fisherForwardChance) {
+    moveSelfForward(owner, CFG.fisherForwardSquares)
+    stats.fisherForward += 1
+    return { taken: true, ret: 0 }
+  }
+  roll -= CFG.fisherForwardChance
+
+  if (roll < CFG.fisherSelfHitChance) {
+    selfHit(owner, CFG.fisherSelfHitDamage)
+    stats.fisherSelfHits += 1
+    return { taken: true, ret: 0 }
+  }
+  roll -= CFG.fisherSelfHitChance
+
+  if (roll < CFG.fisherNothingChance) {
+    stats.fisherIdle += 1
+    return { taken: true, ret: 0 }
+  }
+  return { taken: false }
+}
+
+/**
+ * 给这只僵尸当前的钩子实例打补丁（实例级，一次性）。
+ * 为什么不用类：`hookCall` 定义在一个没有 ccclass 注册的内部 hook 类上，
+ * `getClassByName` / `getModuleExport` 都拿不到它；而引擎在 `_shoot` 里把实例挂到
+ * `zombie.hookShot`，所以只能从实例这一侧接入。钩子会被重建，所以每帧看一眼。
+ */
+function patchFisherHook(z) {
+  try {
+    const h = z && z.hookShot
+    if (!h || h.__zfaFisher || typeof h.hookCall !== 'function') return false
+    const orig = h.hookCall
+    h.__zfaFisher = true
+    h.hookCall = function (plant, zombie, tomb) {
+      // 空调用（目标离开草坪 / 停用）不掷骰，交给原实现
+      if (!plant) return orig.apply(this, arguments)
+      const r = fisherRoll(this, plant)
+      if (r.taken) return r.ret
+      return orig.apply(this, arguments)
+    }
+    noteOnce('fisherPatch', '渔夫钩子已接上抽奖逻辑（实例级补丁）')
+    return true
+  } catch (err) {
+    noteOnce('fisherPatchErr', '渔夫钩子打补丁失败：' + errText(err))
+    return false
+  }
+}
+
+function handlerFisherPatch(entry, thisArg, args, callNext) {
+  const r = callNext(...args)
+  try {
+    patchFisherHook(thisArg)
+  } catch (err) {}
+  return r
+}
+
 /**
  * 4. 渔夫僵尸：拉植物改成抽奖。
  *   10% 把自己往前拽一格 / 20% 用力过猛自扣 100 / 20% 完全没反应 / 其余照常拉植物。
@@ -1343,6 +1465,10 @@ function makeHandler(entry) {
           return handlerLobHeadshot(entry, thisArg, args, callNext)
         case 'paperBypass':
           return handlerPaperBypass(entry, thisArg, args, callNext)
+        case 'victimKill':
+          return handlerVictimKill(entry, thisArg, args, callNext)
+        case 'fisherPatch':
+          return handlerFisherPatch(entry, thisArg, args, callNext)
         case 'fisherGamble':
           return handlerFisherGamble(entry, thisArg, args, callNext)
         default:
@@ -1621,9 +1747,13 @@ export const __test__ = {
   makeSelfHitAfter,
   selfHit,
   handlerGargHeal,
+  handlerVictimKill,
   handlerLobHeadshot,
   handlerPaperBypass,
   handlerFisherGamble,
+  handlerFisherPatch,
+  fisherRoll,
+  patchFisherHook,
   installSpikeBypass,
   healZombie,
   scaleProjectile,

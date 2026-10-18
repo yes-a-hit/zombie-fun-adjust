@@ -4,6 +4,27 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.1] - 2026-10-18
+
+### 修复
+
+- **黑暗巨尸击杀不回血**。根因是身份判定：`codenameInList(thisArg, ['dark_gargantuar'])` 依赖
+  `zombieCodename()`，而它运行时要去 engine 查僵尸表 —— **startup 之后引擎访问已关闭**，返回 null，
+  整条判定恒为 false。现在不再判身份（钩子本来就只挂在 `DarkGargantuarZombie.prototype._smash` 上），
+  并把「判击杀」的主路从池快照换成**击杀捕获**：包 `Plant.kill` / `Zombie.playDie`，
+  用 `smashCtx` 限定只在巨尸这一锤的同步窗口内计数（植物死亡时还在播动画、池子里仍占位，快照法本来就统计不到）。
+  池快照降为兜底。
+- **渔夫抽奖不生效**。`hookCall` 属于一个**没有 ccclass 注册的内部 hook 类**，
+  `getClassByName` / `getModuleExport` 都拿不到它，原来按 `BeachFisherHook` 定位必然失败。
+  现在改为每帧从 `zombie.hookShot` 取钩子实例、给它的 `hookCall` 打一次性实例级补丁（钩子会重建，所以每帧看）。
+- **报纸周年版类名不存在**：`ModernNewspaperVeteranZombie` 在引擎里查不到，已从候选里去掉，
+  只挂 `ModernNewspaperZombie`（两个版本共用同一个类）。
+
+### 说明
+
+- 这三个 bug 是同一类：**按「报告里推测的类名」挂钩子**，名字不对就整条静默失效。
+  1.4.1 已按引擎里的 ccclass 注册名逐个核准（`BeachFisherZombie` / `ModernNewspaperZombie` /
+  `CabbagePultPlant` / `DarkGargantuarZombie` / `Plant` / `Zombie`）。
 ## [1.4.0] - 2026-10-18
 
 ### 新增
