@@ -589,6 +589,13 @@ export function runZombies({ T, mod }) {
     ok(T.idInList({ ID: 17 }, T.PAPER_TARGET_IDS) === true, '读报(17) 属二类防具')
     ok(T.idInList({ ID: 18 }, T.PAPER_TARGET_IDS) === true, '周刊(18) 属二类防具')
     ok(T.idInList({ ID: 79 }, T.PAPER_TARGET_IDS) === true, '骆驼牌(79) 属二类防具')
+    ok(T.idInList({ ID: 68 }, T.PAPER_TARGET_IDS) === true, '春节/舞龙变体(68) 属二类防具')
+    ok(T.idInList({ ID: 69 }, T.PAPER_TARGET_IDS) === true, '春节/舞龙变体(69) 属二类防具')
+    ok(T.idInList({ ID: 146 }, T.PAPER_TARGET_IDS) === true, '圣诞/驯鹿变体(146) 属二类防具')
+    ok(T.idInList({ ID: 147 }, T.PAPER_TARGET_IDS) === true, '圣诞/驯鹿变体(147) 属二类防具')
+    ok(T.idInList({ ID: 135 }, T.PAPER_TARGET_IDS) === true, '复活节变体(135) 属二类防具')
+    ok(T.idInList({ ID: 80 }, T.PAPER_TARGET_IDS) === true, '记忆版变体(80) 属二类防具')
+    ok(T.PAPER_TARGET_IDS.length === 12, '二类防具 ID 共 12 个（报纸 2 + 骆驼 10）', String(T.PAPER_TARGET_IDS.length))
     ok(T.idInList({ ID: 3 }, T.PAPER_TARGET_IDS) === false, '普通僵尸不属二类防具')
 
     // 伤害乘 4 同时作用于本体与溅射
@@ -650,7 +657,16 @@ export function runZombies({ T, mod }) {
 
       const out3 = T.handlerPaperBypass({}, { ID: 3 }, [{ armorProtection: true, damageType: 0 }], (d) => d)
       ok(out3 && out3.armorProtection === true, '非纸防具目标不受影响')
+
+      // 骆驼牌（壳 + 本体）：投掷/电击也要穿透到 innerHealth
+      const out4 = T.handlerPaperBypass({}, { ID: 79, __zfaLobBypass: true }, [{ armorProtection: true, damageType: 0 }], (d) => d)
+      ok(out4 && out4.armorProtection === false, '骆驼牌：投掷穿透到本体')
+      const out5 = T.handlerPaperBypass({}, { ID: 78 }, [{ armorProtection: true, damageType: 2 }], (d) => d)
+      ok(out5 && out5.armorProtection === false, '骆驼牌段：电击穿透到本体')
     }
+
+    // 骆驼牌的类挂载必须存在（按 ccclass 名 EgyptCamelZombie）
+    ok(!!T.TARGETS.find((t) => t.key === 'camelBypass' && t.names[0] === 'EgyptCamelZombie'), '骆驼牌挂在 EgyptCamelZombie.dealDamage 上')
 
     // ④ 普通僵尸 + 投掷弹 → 一切照旧
     {

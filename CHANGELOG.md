@@ -4,6 +4,27 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.5] - 2026-10-18
+
+### 修复
+
+- **骆驼牌没被当成二类防具**。上一版说它「没有护甲层」是错的：`EgyptCamelZombie` 是**「壳 + 本体」**结构 ——
+  `Toughness 250` 就是那层骆驼牌（壳），`innerHealth` 才是里面裹着的那只普通僵尸（`ZombieInside: mummy`）。
+  它的 `dealDamage` 里本来就有两条分支：`armorProtection = true` 走 `totalHealth()`（打壳）；
+  `false` 时直接 `innerHealth -= damage` 并把本体放出来 —— **引擎天生支持绕甲**，缺的只是把标记关掉。
+  现在包 `EgyptCamelZombie.prototype.dealDamage`，与报纸走同一套「二类防具」判定。
+
+- **补齐骆驼牌的全部变体 ID**（每个节日版本都是独立枚举，漏一个就漏一个）：
+
+  | 变体 | ID |
+  |---|---|
+  | 埃及（段 / 单峰） | 78 / 79 |
+  | 记忆版 | 80 / 81 |
+  | 春节 · 舞龙 | 68 / 69 |
+  | 复活节 | 135 / 136 |
+  | 圣诞 · 驯鹿 | 146 / 147 |
+
+  这些变体共用 `EgyptCamelZombie` 类，所以挂一次类、按 ID 认人即可。
 ## [1.4.4] - 2026-10-18
 
 ### 修复

@@ -69,8 +69,14 @@ const HEADSHOT_TARGET_IDS = [
   366, // sky_airraid_twin 空袭双舱
 ]
 
-/** 二类防具：modern_newspaper 17 / newspaper_veteran 18 / camel_segment 78 / camel_onehump 79 */
-const PAPER_TARGET_IDS = [17, 18, 78, 79]
+/**
+ * 二类防具（纸制品 / 骆驼牌那个壳）。
+ * 骆驼牌不算「无护甲」，它是「壳 + 本体」：Toughness 250 是那层骆驼牌，里面裹着一只普通僵尸。
+ * 所以它和报纸一样，需要按「二类防具」处理，而且**每个节日变体都是独立 ID**：
+ *   埃及 78/79（段/单峰）· 记忆版 80/81 · 春节（舞龙）68/69 · 复活节 135/136 · 圣诞（驯鹿）146/147
+ * 报纸：modern_newspaper 17 · newspaper_veteran 18
+ */
+const PAPER_TARGET_IDS = [17, 18, 78, 79, 80, 81, 68, 69, 135, 136, 146, 147]
 
 /** 按 ZombieEnum 数字判身份（拿不到 ID 时退回 codename，那条路可能失效但不至于抛错） */
 function idInList(z, ids, nameList) {
@@ -100,11 +106,20 @@ const PAPER_TARGETS = [
   'newspaper',
   'beepaper',
   'newspaper_veteran', // 周刊 / 周日版
+  // 骆驼牌（壳 + 本体）及其全部变体：埃及 / 记忆版 / 春节（舞龙）/ 复活节 / 圣诞（驯鹿）
   'camel_segment',
   'camel_onehump',
   'camel_twohump',
   'camel_threehump',
   'camel_manyhump',
+  'camel_segment_touch',
+  'camel_onehump_touch',
+  'lunar_camel_segment',
+  'lunar_camel_onehump',
+  'easter_camel_segment',
+  'easter_camel_onehump',
+  'feastivus_camel_segment',
+  'feastivus_camel_onehump',
 ]
 
 
@@ -240,6 +255,12 @@ const TARGETS = [
   // 3) 二类防具·电击：报纸的护甲层在 dealDamage 里，只有 armorProtection=true 才吃纸。
   //    电击 damageType = electricity(2)，据此把 armorProtection 关掉即可直击本体。
   { key: 'paperBypass', label: '二类防具·电击绕过纸', names: ['ModernNewspaperZombie'], module: 'chunks:///_virtual/ModernNewspaperZombie.ts', methods: ['dealDamage'], mode: 'paperBypass' },
+  // 1.4.5：骆驼牌不是「没护甲」，而是「壳 + 本体」结构 ——
+  // Toughness 250 是那层骆驼牌（壳），`innerHealth` 才是里面那只普通僵尸（ZombieInside: mummy）。
+  // EgyptCamelZombie.dealDamage 里：armorProtection=true 走 totalHealth（打壳）；
+  // **false 时直接 `innerHealth -= damage`，并把本体放出来** —— 引擎本来就支持绕甲。
+  // 所以只要和报纸一样，把电击/投掷的 armorProtection 关掉即可。
+  { key: 'camelBypass', label: '骆驼牌·二类防具（电击/投掷穿壳打本体）', names: ['EgyptCamelZombie'], module: 'chunks:///_virtual/EgyptCamelZombie.ts', methods: ['dealDamage'], mode: 'paperBypass' },
   // 4) 渔夫：拉植物入口是 hookCall(plant, zombie, tomb) —— 返回要拉多久。
   //    空调用（目标离开草坪 / 停用）也会进来，必须排除，否则会误掷骰。
   // 1.4.1 修正：`hookCall` 属于一个没有 ccclass 注册的内部 hook 类，按类名根本拿不到。
