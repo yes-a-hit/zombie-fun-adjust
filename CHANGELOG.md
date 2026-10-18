@@ -4,6 +4,22 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.4] - 2026-10-18
+
+### 修复
+
+- **「绕纸」被做成了「毁纸」**：1.4.3 在投掷命中纸防具时直接把 `paperHealth` 清零，
+  表现出来就是报纸被一下打掉（读报僵尸直接发飙），而不是伤害绕过报纸。
+  现在改为**瞬时穿透标记**：投掷命中时给目标打 `__zfaLobBypass`，
+  由报纸自己的 `dealDamage` 消费——把 `armorProtection` 关掉，伤害直接进本体，
+  **报纸本身完好保留**，调用结束后标记清除。电击那条同样走这个判定。
+
+### 说明
+
+- **骆驼牌没有护甲层**，所以「绕开防具」对它天然无感：`camel_segment` / `camel_onehump` 的 props 里
+  只有 `Toughness: 250`、`ZombieInside`、`TeamMemberCount`，没有 `Armor` 字段，
+  `ArmorProps.json` 里也没有骆驼相关的护甲定义 —— 它打上去的本来就一直是本体。
+  它的 ID（78 / 79）仍留在二类防具名单里，将来若给它加护甲会自动生效。
 ## [1.4.3] - 2026-10-18
 
 ### 修复

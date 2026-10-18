@@ -1308,7 +1308,12 @@ function handlerLobHit(entry, thisArg, args, callNext) {
       const head = idInList(target, HEADSHOT_TARGET_IDS, HEADSHOT_TARGETS)
       const paper = idInList(target, PAPER_TARGET_IDS, PAPER_TARGETS)
 
-      if (paper) zeroPaper(target) // 纸先被砸穿，本次伤害直接进本体
+      // 1.4.4：不要再把纸一键清零（那等于「一下摧毁报纸」）。
+      // 改成打一个「本次伤害穿透护甲」的瞬时标记，由报纸自己的 dealDamage 消费，
+      // 报纸本身保留 —— 这才是「绕开防具」，不是「拆掉防具」。
+      if (paper) {
+        try { target.__zfaLobBypass = true } catch (err) {}
+      }
 
       if (head) {
         const orig = prj.damage
@@ -1328,6 +1333,7 @@ function handlerLobHit(entry, thisArg, args, callNext) {
     if (restore != null) {
       try { prj.damage = restore } catch (err) {}
     }
+    try { if (target && target.__zfaLobBypass) target.__zfaLobBypass = false } catch (err) {}
   }
 }
 
@@ -1335,13 +1341,14 @@ function handlerPaperBypass(entry, thisArg, args, callNext) {
   try {
     if (idInList(thisArg, PAPER_TARGET_IDS, PAPER_TARGETS)) {
       const d = args[0]
-      if (d && d.damageType === electricityType()) {
+      const lobbed = !!(thisArg && thisArg.__zfaLobBypass)
+      if (d && (lobbed || d.damageType === electricityType())) {
         args[0] = withoutArmorProtection(d)
         stats.paperBypasses += 1
       }
     }
   } catch (err) {
-    noteOnce('paperElec', '二类防具（电击）判定失败：' + errText(err))
+    noteOnce('paperElec', '二类防具（电击/投掷）判定失败：' + errText(err))
   }
   return callNext(...args)
 }

@@ -628,13 +628,28 @@ export function runZombies({ T, mod }) {
       ok(seen === 100, '直线弹不受影响（不是投手）', String(seen))
     }
 
-    // ③ 投掷弹命中纸制防具 → 纸层当场清零（本次伤害就进本体）
+    // ③ 投掷弹命中纸制防具 → 只打「本次穿透」标记，报纸本身保留
     {
       const prj = { gravity: 0.5, damage: 100 }
       const paper = { ID: 17, _paperHealth: 800 }
-      handler({ thisArg: prj, args: [paper, true, null, true], callNext: () => {} })
-      ok(paper._paperHealth === 0, '读报僵尸的纸被砸穿', String(paper._paperHealth))
-      ok(prj.damage === 100, '绕纸不额外放大伤害（只清纸）', String(prj.damage))
+      let during = null
+      handler({ thisArg: prj, args: [paper, true, null, true], callNext: () => { during = paper.__zfaLobBypass } })
+      ok(during === true, '命中纸防具时打上「本次穿透」标记')
+      ok(paper._paperHealth === 800, '报纸不会被一键摧毁（绕开 ≠ 拆掉）', String(paper._paperHealth))
+      ok(!paper.__zfaLobBypass, '调用结束后标记清除')
+      ok(prj.damage === 100, '绕纸不额外加伤', String(prj.damage))
+    }
+
+    // ⑤ 报纸侧消费标记：关掉 armorProtection，伤害进本体
+    {
+      const out = T.handlerPaperBypass({}, { ID: 17, __zfaLobBypass: true }, [{ armorProtection: true, damageType: 0 }], (d) => d)
+      ok(out && out.armorProtection === false, '投掷穿透：报纸把 armorProtection 关掉')
+
+      const out2 = T.handlerPaperBypass({}, { ID: 18 }, [{ armorProtection: true, damageType: 2 }], (d) => d)
+      ok(out2 && out2.armorProtection === false, '电击穿透：周年版同理')
+
+      const out3 = T.handlerPaperBypass({}, { ID: 3 }, [{ armorProtection: true, damageType: 0 }], (d) => d)
+      ok(out3 && out3.armorProtection === true, '非纸防具目标不受影响')
     }
 
     // ④ 普通僵尸 + 投掷弹 → 一切照旧
