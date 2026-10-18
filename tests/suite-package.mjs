@@ -15,7 +15,7 @@ export function runPackage({ pkgRoot }) {
   // ── 清单 ──
   const packJson = JSON.parse(readFileSync(at('pack.json'), 'utf8'))
   ok(packJson.uuid === 'yg.zombie-fun-adjust', 'uuid 正确', packJson.uuid)
-  ok(packJson.version === '1.4.1', 'version = 1.4.1', packJson.version)
+  ok(packJson.version === '1.4.2', 'version = 1.4.2', packJson.version)
   ok(/（22 条）/.test(packJson.description), '描述标注为 22 条')
   ok(!/国王可被拦截|运兵艇|墓碑/.test(packJson.description),
     '描述里不含已撤销 / 做不到的功能（国王拦截、运兵艇、巨人墓碑）',

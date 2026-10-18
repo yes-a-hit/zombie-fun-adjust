@@ -54,6 +54,32 @@ const CFG = {
  * 投手「爆头 4 倍」的目标 —— 被砸中头部就当场报废的那几只。
  * 「冰车」按造冰车僵尸（zomboni）实现；若日后要换成雪橇队，把它加进名单即可。
  */
+/**
+ * 运行时判身份必须用 `zombie.ID`（ZombieEnum 数字），**不能靠 codename**：
+ * `zombieCodename()` 要去 engine 查僵尸表，而 startup 之后引擎访问已关闭，一律返回 null。
+ * 下面这些数字取自 0.15.0 引擎的 ZombieEnum（`e[e.KEY=NN]="KEY"` 形式），已逐个核对。
+ */
+const HEADSHOT_TARGET_IDS = [
+  174, // future_gargantuar 巨尸统领者
+  23, // catapult 投石车
+  22, // zomboni 造冰车
+  365, // sky_twin 双舱飞行僵尸
+  363, // sky_twin_upper 双舱（上）
+  364, // sky_twin_lower 双舱（下）
+  366, // sky_airraid_twin 空袭双舱
+]
+
+/** 二类防具：modern_newspaper 17 / newspaper_veteran 18 / camel_segment 78 / camel_onehump 79 */
+const PAPER_TARGET_IDS = [17, 18, 78, 79]
+
+/** 按 ZombieEnum 数字判身份（拿不到 ID 时退回 codename，那条路可能失效但不至于抛错） */
+function idInList(z, ids, nameList) {
+  try {
+    if (z && typeof z.ID === 'number') return ids.indexOf(z.ID) >= 0
+  } catch (err) {}
+  return nameList ? codenameInList(z, nameList) : false
+}
+
 const HEADSHOT_TARGETS = [
   'future_gargantuar', // 巨尸统领者
   'catapult', // 投石车僵尸
@@ -1226,11 +1252,11 @@ function handlerLobHeadshot(entry, thisArg, args, callNext) {
   return p.then((prj) => {
     try {
       const target = args[0] || (prj && prj.targetLocked)
-      if (prj && codenameInList(target, HEADSHOT_TARGETS)) {
+      if (prj && idInList(target, HEADSHOT_TARGET_IDS, HEADSHOT_TARGETS)) {
         scaleProjectile(prj, CFG.lobberHeadshotMult)
         stats.lobHeadshots += 1
       }
-      if (codenameInList(target, PAPER_TARGETS)) zeroPaper(target)
+      if (idInList(target, PAPER_TARGET_IDS, PAPER_TARGETS)) zeroPaper(target)
     } catch (err) {
       noteOnce('lobHead', '投手爆头判定失败：' + errText(err))
     }
@@ -1261,7 +1287,7 @@ function withoutArmorProtection(details) {
 /** 3. 二类防具·电击：报纸护甲层只吃 armorProtection=true 的伤害 */
 function handlerPaperBypass(entry, thisArg, args, callNext) {
   try {
-    if (codenameInList(thisArg, PAPER_TARGETS)) {
+    if (idInList(thisArg, PAPER_TARGET_IDS, PAPER_TARGETS)) {
       const d = args[0]
       if (d && d.damageType === electricityType()) {
         args[0] = withoutArmorProtection(d)
@@ -1290,7 +1316,7 @@ function installSpikeBypass(ctx) {
       handler: ({ args, callNext }) => {
         try {
           const z = args[0]
-          if (codenameInList(z, PAPER_TARGETS)) {
+          if (idInList(z, PAPER_TARGET_IDS, PAPER_TARGETS)) {
             for (let i = 0; i < args.length; i++) {
               const a = args[i]
               if (a && typeof a === 'object' && 'armorProtection' in a) {
@@ -1762,6 +1788,9 @@ export const __test__ = {
   moveSelfForward,
   HEADSHOT_TARGETS,
   PAPER_TARGETS,
+  HEADSHOT_TARGET_IDS,
+  PAPER_TARGET_IDS,
+  idInList,
   setRefs(refs) { Object.assign(REFS, refs || {}) },
   getRefs() { return REFS },
   getDiag() { return diagLines.slice() },

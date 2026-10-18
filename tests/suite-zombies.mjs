@@ -573,4 +573,33 @@ export function runZombies({ T, mod }) {
     try { hook.hookCall(null, null, null) } finally { Math.random = realRandom }
     ok(T.stats.fisherRolls === rolls, '空调用不掷骰')
   }
+
+  // ─────────────────────── 1.4.2 投手爆头 / 二类防具：改用 ZombieEnum ID ───────────────────────
+  section('1.4.2. 身份判定改用 ZombieEnum ID（codename 在运行期查不到）')
+
+  {
+    ok(Array.isArray(T.HEADSHOT_TARGET_IDS) && T.HEADSHOT_TARGET_IDS.length === 7, '爆头名单 7 个 ID', JSON.stringify(T.HEADSHOT_TARGET_IDS))
+    ok(T.HEADSHOT_TARGET_IDS.indexOf(174) >= 0, '含 future_gargantuar = 174')
+    ok(T.HEADSHOT_TARGET_IDS.indexOf(23) >= 0, '含 catapult = 23')
+    ok(T.HEADSHOT_TARGET_IDS.indexOf(22) >= 0, '含 zomboni = 22')
+    ok(T.HEADSHOT_TARGET_IDS.indexOf(365) >= 0, '含 sky_twin = 365')
+
+    ok(T.idInList({ ID: 174 }, T.HEADSHOT_TARGET_IDS) === true, 'ID=174 判为爆头目标')
+    ok(T.idInList({ ID: 3 }, T.HEADSHOT_TARGET_IDS) === false, '普通僵尸不算爆头目标')
+    ok(T.idInList({ ID: 17 }, T.PAPER_TARGET_IDS) === true, '读报(17) 属二类防具')
+    ok(T.idInList({ ID: 18 }, T.PAPER_TARGET_IDS) === true, '周刊(18) 属二类防具')
+    ok(T.idInList({ ID: 79 }, T.PAPER_TARGET_IDS) === true, '骆驼牌(79) 属二类防具')
+    ok(T.idInList({ ID: 3 }, T.PAPER_TARGET_IDS) === false, '普通僵尸不属二类防具')
+
+    // 伤害乘 4 同时作用于本体与溅射
+    const prj = { damage: 100, splashDamages: [50, 0], setDamage(v) { this.damage = v } }
+    T.scaleProjectile(prj, 4)
+    ok(prj.damage === 400, '本体伤害 ×4', String(prj.damage))
+    ok(prj.splashDamages[0] === 200, '溅射伤害 ×4', JSON.stringify(prj.splashDamages))
+
+    // 纸被投掷砸穿 = 纸层清零
+    const paper = { ID: 17, _paperHealth: 800 }
+    T.zeroPaper(paper)
+    ok(paper._paperHealth === 0, '投掷命中后纸层清零（直击本体）')
+  }
 }

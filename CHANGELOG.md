@@ -4,6 +4,25 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.2] - 2026-10-18
+
+### 修复
+
+- **投手 4 倍伤害不生效、投掷不绕纸**。同一病根：`codenameInList()` 依赖 `zombieCodename()`，
+  运行期 engine 已关闭 → 恒为 null。现改用 **ZombieEnum 数字 ID** 判身份，数字取自 0.15.0 引擎枚举并逐个核对：
+
+  | 用途 | ID |
+  |---|---|
+  | 爆头名单 | future_gargantuar 174 · catapult 23 · zomboni 22 · sky_twin 365 · twin_upper 363 · twin_lower 364 · airraid_twin 366 |
+  | 二类防具 | modern_newspaper 17 · newspaper_veteran 18 · camel_segment 78 · camel_onehump 79 |
+
+  `idInList(z, ids, names)` 优先用 `z.ID`；只有拿不到 ID 时才退回 codename（那条路仍可能失效，但不再抛错）。
+  投掷绕纸在 `_lobToZombie` 命中时把 `paperHealth` 清零，现在也按 ID 判定。
+
+### 说明
+
+- `_lobToZombie` 是编译后的生成器函数（返回 Promise），4 倍通过 `.then` 改弹体伤害与溅射 —— 与引擎自己的 `setDamage` 同款。
+- 1.4.0~1.4.1 的三处失效全是同一类错误：**用运行期拿不到的 codename 判身份**。这类判定现在统一走 ID。
 ## [1.4.1] - 2026-10-18
 
 ### 修复
