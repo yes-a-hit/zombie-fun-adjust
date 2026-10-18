@@ -4,6 +4,24 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.3] - 2026-10-18
+
+### 修复
+
+- **投掷 4 倍与绕纸仍然不生效**。1.4.2 把身份判定换成 ID 了，但拦截点还在
+  `CabbagePultPlant._lobToZombie` —— 那是个编译后的生成器方法，按 ccclass 拿类再挂它并不可靠。
+  1.4.3 换到**所有弹体命中的必经之路** `commonShot.prototype.dealDamageToZombie`：
+
+  - 判「投掷物」用 `gravity > 0`（投手弹走抛物线，直线弹是 0），不依赖任何数据标记；
+  - 命中爆头名单（ZombieEnum ID）时，在调用窗口里把 `this.damage` 临时乘 4 ——
+    该函数内部是 `new SplashDamage(this.damage, …)`，所以本体与溅射会一起放大，调用结束后还原；
+  - 命中二类防具（读报 17 / 周刊 18 / 骆驼 78、79）时先把 `paperHealth` 清零，
+    本次伤害就绕过纸直接进本体（只清纸，不额外加伤）。
+
+### 说明
+
+- 1.4.0 → 1.4.3 四轮修复暴露的是同一个设计错误：**依赖运行期拿不到的 codename、或依赖按名字挂载生成器方法**。
+  现在的规矩：身份用 ZombieEnum 数字，行为钩子只挂「一定会被调用的公共方法」。
 ## [1.4.2] - 2026-10-18
 
 ### 修复

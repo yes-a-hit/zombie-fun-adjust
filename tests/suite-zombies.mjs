@@ -602,4 +602,48 @@ export function runZombies({ T, mod }) {
     T.zeroPaper(paper)
     ok(paper._paperHealth === 0, '投掷命中后纸层清零（直击本体）')
   }
+
+  // ─────────────────────── 1.4.3 投掷弹命中结算（必经之路） ───────────────────────
+  section('1.4.3. 投掷弹命中：改 this.damage 实现 4 倍，纸层直接清掉')
+
+  {
+    const entry = { key: 'lobHit', label: 't', names: ['commonShot'], module: 'm', methods: ['dealDamageToZombie'], mode: 'lobHit' }
+    const handler = T.makeHandler(entry)
+
+    // ① 投掷弹（gravity>0）命中爆头目标 → 调用窗口里 damage 已 ×4，调用后还原
+    {
+      const prj = { gravity: 0.5, damage: 100 }
+      let seen = null
+      const r = handler({ thisArg: prj, args: [{ ID: 174 }, true, null, true], callNext: () => { seen = prj.damage; return 'OK' } })
+      ok(r === 'OK', '原返回值不变', String(r))
+      ok(seen === 400, '调用窗口里本体伤害已 ×4', String(seen))
+      ok(prj.damage === 100, '调用结束后还原成原伤害', String(prj.damage))
+    }
+
+    // ② 直线弹（gravity=0）命中同一目标 → 不放大
+    {
+      const prj = { gravity: 0, damage: 100 }
+      let seen = null
+      handler({ thisArg: prj, args: [{ ID: 174 }, true, null, true], callNext: () => { seen = prj.damage } })
+      ok(seen === 100, '直线弹不受影响（不是投手）', String(seen))
+    }
+
+    // ③ 投掷弹命中纸制防具 → 纸层当场清零（本次伤害就进本体）
+    {
+      const prj = { gravity: 0.5, damage: 100 }
+      const paper = { ID: 17, _paperHealth: 800 }
+      handler({ thisArg: prj, args: [paper, true, null, true], callNext: () => {} })
+      ok(paper._paperHealth === 0, '读报僵尸的纸被砸穿', String(paper._paperHealth))
+      ok(prj.damage === 100, '绕纸不额外放大伤害（只清纸）', String(prj.damage))
+    }
+
+    // ④ 普通僵尸 + 投掷弹 → 一切照旧
+    {
+      const prj = { gravity: 0.5, damage: 100 }
+      const z = { ID: 3, _paperHealth: 500 }
+      let seen = null
+      handler({ thisArg: prj, args: [z, true, null, true], callNext: () => { seen = prj.damage } })
+      ok(seen === 100 && z._paperHealth === 500, '普通僵尸既不加伤也不清纸', `dmg=${seen} paper=${z._paperHealth}`)
+    }
+  }
 }

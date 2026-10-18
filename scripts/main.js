@@ -231,7 +231,12 @@ const TARGETS = [
   { key: 'victimZombieDie', label: '击杀捕获·僵尸死亡', names: ['Zombie'], module: 'chunks:///_virtual/Zombie.ts', methods: ['playDie'], mode: 'victimKill' },
   // 2) 投手 4 倍：投手 = CabbagePultPlant 基类（MelonPult/KernelPult/PepperPult 都继承它）。
   //    _lobToZombie 返回 Promise<prj>，原函数本就用 setDamage 改弹体伤害，照同一手法乘 4。
-  { key: 'lobHeadshot', label: '投手·命中指定僵尸4倍伤害', names: ['CabbagePultPlant'], module: 'chunks:///_virtual/CabbagePultPlant.ts', methods: ['_lobToZombie'], mode: 'lobHeadshot' },
+  // 1.4.3：改从**弹体命中的必经之路**接入。原来挂 `CabbagePultPlant._lobToZombie`，
+  // 那条路依赖类定位成功（`_lobToZombie` 是编译后的生成器，未必能按 ccclass 拿到）。
+  // `commonShot.dealDamageToZombie` 是所有弹体的命中结算点，内部 `new SplashDamage(this.damage, …)`
+  // 自建伤害 —— 所以在调用期间临时改 `this.damage`，本体与溅射会一起放大。
+  // 只对 `gravity > 0`（抛物线 = 投掷物）生效，普通直线弹不受影响。
+  { key: 'lobHit', label: '投掷弹命中·爆头4倍/绕纸', names: ['commonShot'], module: 'chunks:///_virtual/Projectiles.ts', methods: ['dealDamageToZombie'], mode: 'lobHit' },
   // 3) 二类防具·电击：报纸的护甲层在 dealDamage 里，只有 armorProtection=true 才吃纸。
   //    电击 damageType = electricity(2)，据此把 armorProtection 关掉即可直击本体。
   { key: 'paperBypass', label: '二类防具·电击绕过纸', names: ['ModernNewspaperZombie'], module: 'chunks:///_virtual/ModernNewspaperZombie.ts', methods: ['dealDamage'], mode: 'paperBypass' },
@@ -1285,6 +1290,47 @@ function withoutArmorProtection(details) {
 }
 
 /** 3. 二类防具·电击：报纸护甲层只吃 armorProtection=true 的伤害 */
+/**
+ * 2'. 投掷弹命中结算（1.4.3）：本体与溅射一起放大，纸防具直接清掉。
+ *
+ * `dealDamageToZombie(zombie, splashAlso, details, particles)` 内部是
+ * `i || (i = new SplashDamage(this.damage, …))` —— 只要在调用窗口里改 `this.damage`，
+ * 本体伤害与 `dealSplashDamage` 会一起乘上去，不需要自己造 details（那个构造有 15 个参数）。
+ * 判「投掷物」用 `gravity > 0`：投手弹走抛物线，普通直线弹是 0。
+ */
+function handlerLobHit(entry, thisArg, args, callNext) {
+  const target = args[0]
+  const prj = thisArg
+  let restore = null
+  try {
+    const isLob = !!(prj && typeof prj.gravity === 'number' && prj.gravity > 0)
+    if (isLob && target && typeof target === 'object') {
+      const head = idInList(target, HEADSHOT_TARGET_IDS, HEADSHOT_TARGETS)
+      const paper = idInList(target, PAPER_TARGET_IDS, PAPER_TARGETS)
+
+      if (paper) zeroPaper(target) // 纸先被砸穿，本次伤害直接进本体
+
+      if (head) {
+        const orig = prj.damage
+        if (typeof orig === 'number' && orig > 0) {
+          prj.damage = orig * CFG.lobberHeadshotMult
+          restore = orig
+          stats.lobHeadshots += 1
+        }
+      }
+    }
+  } catch (err) {
+    noteOnce('lobHit', '投掷命中处理失败：' + errText(err))
+  }
+  try {
+    return callNext(...args)
+  } finally {
+    if (restore != null) {
+      try { prj.damage = restore } catch (err) {}
+    }
+  }
+}
+
 function handlerPaperBypass(entry, thisArg, args, callNext) {
   try {
     if (idInList(thisArg, PAPER_TARGET_IDS, PAPER_TARGETS)) {
@@ -1489,6 +1535,8 @@ function makeHandler(entry) {
           return handlerGargHeal(entry, thisArg, args, callNext)
         case 'lobHeadshot':
           return handlerLobHeadshot(entry, thisArg, args, callNext)
+        case 'lobHit':
+          return handlerLobHit(entry, thisArg, args, callNext)
         case 'paperBypass':
           return handlerPaperBypass(entry, thisArg, args, callNext)
         case 'victimKill':
@@ -1776,6 +1824,7 @@ export const __test__ = {
   handlerVictimKill,
   handlerLobHeadshot,
   handlerPaperBypass,
+  handlerLobHit,
   handlerFisherGamble,
   handlerFisherPatch,
   fisherRoll,
