@@ -5,8 +5,8 @@
 
 | | |
 |---|---|
-| 版本 | 1.3.0 |
-| 下载 | [zombie-fun-adjust-1.3.0.zip](https://github.com/yes-a-hit/zombie-fun-adjust/releases/latest) |
+| 版本 | 1.4.5 |
+| 下载 | [zombie-fun-adjust-1.4.5.zip](https://github.com/yes-a-hit/zombie-fun-adjust/releases/latest) |
 | 仓库 | <https://github.com/yes-a-hit/zombie-fun-adjust> |
 | 适配 | PvZ2 Gardendless 0.15.0 + GP-Next 1.5.0-pre.1 |
 | 前置 | 无（需要开启 JavaScript 模组） |
