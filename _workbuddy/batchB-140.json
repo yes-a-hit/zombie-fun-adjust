@@ -1,0 +1,188 @@
+{
+  "zombies": [
+    {
+      "codename": "beach_fisherman",
+      "intro": {
+        "en": "Casts a line to pull far plants to him. The cast now has four possible outcomes, and only one of them is the one he trained for.",
+        "zh": "甩出鱼钩，把远处的植物拉到他身边。这一钩现在有四种结果：一半照旧，另一半分别是把自己拽向前、拉伤自己的胳膊、以及空转一圈什么也没勾到。"
+      },
+      "special": [
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "pulls plants to the right",
+            "zh": "把植物向右拉走"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "plants next to him are tossed off the lawn",
+            "zh": "相邻的植物直接被甩出草坪"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "the cast is now a lottery: 10% pulls himself one tile forward, 20% costs him 100 health, 20% comes back empty, the remaining 50% still drags the plant over",
+            "zh": "甩钩改成抽奖：10% 把自己往前拽一格，20% 自己掉 100 点血，20% 钩子空转一圈收回，其余 50% 照旧把植物拉走"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "insists he is air force: the line is long-range towing equipment, one cast is one sortie, and standing on the lawn is ground crew",
+            "zh": "他坚持自己属于空军类：钩子是远程牵引装备，甩一次算一个架次，蹲在草坪上属于地勤"
+          }
+        }
+      ],
+      "chat": {
+        "en": "Fisherman Zombie insists he is air force. The line is long-range towing equipment, it crosses the whole lawn, and every cast counts as a sortie. That he stands on the grass, he explains, makes him ground crew, and ground crew answers to the air force too. Ground crew also pulls muscles: one cast in five costs him 100 health, and one in five comes back with nothing on the hook. He still tells everyone about the big one he landed. There is now a one-in-ten chance that the big one is him.",
+        "zh": "渔夫僵尸坚持自己属于空军类。钩子是远程牵引装备，甩出去能横穿整条草坪，一次出手算一个架次；至于他本人蹲在地上，他说那是地勤，地勤也归空军管。地勤会拉伤胳膊——五次甩钩里有一次用力过猛，自己掉 100 点血；还有一次钩子空转一圈回来，什么也没勾着。他仍然跟每个人讲自己钓到过一条大鱼。现在的问题是，有十分之一的概率，那条鱼是他自己。"
+      }
+    },
+    {
+      "codename": "future_gargantuar",
+      "intro": {
+        "en": "Has it all: heavy armor, laser eyes, smashing arms, and a Bug Bot deployment system. The armor covers the shoulders and the chest. It does not cover the mechanical head with the laser eyes in it, which is exactly where lobbed vegetables land, for quadruple damage.",
+        "zh": "功能齐全：沉重的铠甲、激光眼、会砸击的机械臂，以及机械虫开发系统。铠甲护住了肩和胸，唯独没护住那颗装激光眼的机械头——投手类植物砸在那里，伤害 ×4。"
+      },
+      "special": [
+        {
+          "name": { "en": "Damage", "zh": "攻击" },
+          "desc": {
+            "en": "crushes plants with arms",
+            "zh": "用手臂摧毁植物"
+          }
+        },
+        {
+          "name": { "en": "Damage", "zh": "攻击" },
+          "desc": {
+            "en": "randomly burns tiles with laser eyes",
+            "zh": "时常用激光眼扫射地面"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "launches Bug Bot when damaged",
+            "zh": "受重伤时射出机械虫"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "takes quadruple damage from lobbed plants such as Cabbage-pult, Kernel-pult, Melon-pult and Pepper-pult",
+            "zh": "受到投手类植物（卷心菜投手、玉米投手、西瓜投手、辣椒投手这一类）的抛投伤害 ×4"
+          }
+        }
+      ],
+      "chat": {
+        "en": "The imp pilots of the Gargantuar Prime series are handpicked by Dr. Zomboss himself: the small, the mean, the fearless, and mostly the ones who can drive a stick shift. The chassis has everything — heavy plating, laser eyes, arms that flatten a whole column. The blueprints leave out exactly one line: a roof over the cockpit. From above, that laser-eyed head is a perfect circle, and anything lobbed onto it does four times the work. Engineering says the roof was optional. The pilot says he now wears a helmet on every shift.",
+        "zh": "巨尸统领者的驾驶员是僵尸博士亲自挑的：渺小、卑鄙、无畏，主要是会开手动挡。这具机体什么都有——重甲、激光眼、能砸碎一切的机械臂——设计图上唯一漏掉的是一条：驾驶舱的顶盖。那颗装着激光眼的机械头从上方看是个完美的靶子，投手类植物砸中它，伤害 ×4。据设计部门称，顶盖属于选装件。驾驶员表示，他现在每次出勤都戴头盔。"
+      }
+    },
+    {
+      "codename": "catapult",
+      "intro": {
+        "en": "Catapult Zombie lobs basketballs over wall plants with deadly accuracy, which makes it a serious threat. His head sits above the rim of the cart, and from directly overhead it is a very tidy circle: lobbed vegetables landing on it do quadruple damage.",
+        "zh": "投石车僵尸跨过前方的植物，以致命的精准度向后排的植物投掷篮球，是不可小觑的威胁。他的脑袋露在车斗外面，从上面看是个标准的圆——投手类植物砸中它，伤害 ×4。"
+      },
+      "special": [
+        {
+          "name": { "en": "Damage", "zh": "攻击" },
+          "desc": {
+            "en": "crushes plants while driving down the lawn",
+            "zh": "前进时碾压植物"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "lobs projectiles at the last plant in the lane",
+            "zh": "向每一行最后排的植物投掷篮球"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "takes quadruple damage from lobbed plants",
+            "zh": "受到投手类植物的抛投伤害 ×4"
+          }
+        }
+      ],
+      "chat": {
+        "en": "Catapult Zombie has one job, and he has always done it well: throwing balls at somebody else's back row. He is accurate. Two ZCorp factories run around the clock and there are still never enough basketballs. He now knows what it feels like to be on the receiving end — lobbed vegetables come down on the head in the cart for four times the damage. His review: at least this time the ball went into my basket. Fleet reports no change in basketball production, and a sharp rise in head-repair invoices.",
+        "zh": "投石车僵尸这辈子只干一件事：往别人的后排扔球。他扔得很准，Z 公司的两家工厂日夜赶工，篮球还是不够用。现在他终于知道被砸中脑袋是什么感觉——投手类植物从天上下来，砸在车斗里那颗脑袋上，伤害 ×4。他对此的评价是：至少这一次，球进的是我的筐。据车队称，篮球产量没有变化，但驾驶员的头部维修单变多了。"
+      }
+    },
+    {
+      "codename": "zomboni",
+      "intro": {
+        "en": "A technological marvel from the great white north, Zomboni ices over your lawn into a barren wasteland. He drives behind a windshield that stops snow, stops ice, and stops nothing that falls from above: lobbed vegetables do quadruple damage to the driver's seat.",
+        "zh": "作为来自加拿大冰雪地带的科技之光，造冰车僵尸让你的前院被冰雪覆盖，变成一方废土。他坐在挡风玻璃后面，那块玻璃防雪、防冰，唯独防不住从天上掉下来的东西——投手类植物的伤害 ×4。"
+      },
+      "special": [
+        {
+          "name": { "en": "Damage", "zh": "攻击" },
+          "desc": {
+            "en": "crushes plants",
+            "zh": "碾压植物"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "creates an ice trail behind it",
+            "zh": "在身后形成冰道"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "takes quadruple damage from lobbed plants",
+            "zh": "受到投手类植物的抛投伤害 ×4"
+          }
+        }
+      ],
+      "chat": {
+        "en": "Zomboni is the steadiest driver on the lane. Ice, snowdrifts, freshly planted flora — he flattens all of it to a uniform finish. The one thing missing from the route map is whatever comes down from above. The windshield handles weather. It does not handle a cabbage, and anything lobbed at the driver's seat does four times the damage. Fleet says his record is still perfect: quadruple damage is not an accident, it is weather. He says next season he is fitting a wiper, and a roof.",
+        "zh": "造冰车僵尸是这条道上最稳的司机：冰面、雪堆、刚种下的植物，他都压得平平整整。唯一没算进路书的是从天上落下来的东西。挡风玻璃挡得住风雪，挡不住一颗卷心菜——投手类植物砸中驾驶位，伤害 ×4。据车队称，他的驾驶记录依然完美，四倍伤害不算事故，算天气。他本人表示，下次出车要装一副雨刷，顺便把顶棚也补上。"
+      }
+    },
+    {
+      "codename": "sky_twin",
+      "intro": {
+        "en": "Can only be defeated when both cabins are destroyed. The difficulty is that both cabins sit inside lobbing range: a lobbed vegetable hits a cabin for quadruple damage, and a paralysed cabin still passes half of what it takes to the other one.",
+        "zh": "两个机舱全部被击毁后才会坠落。麻烦在于两个机舱都在投手类植物的射程之内：一记抛投砸中机舱，伤害 ×4，而瘫痪的机舱还会把其中一半传给另一个。"
+      },
+      "special": [
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "paralyzed cabin passes half of the damage it receives to the other",
+            "zh": "瘫痪的机舱将受到的伤害的一半传递给另一个机舱"
+          }
+        },
+        {
+          "name": { "en": "Weakness", "zh": "弱点" },
+          "desc": {
+            "en": "paralyzed cabin can be blocked by plants",
+            "zh": "瘫痪的机舱会被植物挡下"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "takes quadruple damage from lobbed plants",
+            "zh": "受到投手类植物的抛投伤害 ×4"
+          }
+        }
+      ],
+      "chat": {
+        "en": "The brothers in the Double-Cabin Aircraft share a dream of travelling the world and conquering it. They have never agreed on where to start. They now have something new to discuss: what comes down from above. A lobbed vegetable hitting either cabin does quadruple damage, and a paralysed cabin passes half of it along — which the elder brother calls sharing the burden, and the younger calls you went first. Ground observers report the two have finally agreed on one thing: take out the lobbers first.",
+        "zh": "双舱飞行僵尸是两兄弟，一个开左舱，一个开右舱，梦想是环球旅行，至今没谈拢去哪儿。现在他们多了一个共同话题：从上面砸下来的东西。投手类植物打中任何一个机舱，伤害 ×4，而瘫痪的机舱还会把其中一半传给另一个——哥哥说这叫有难同当，弟弟说这叫你先挨的。据地面观察员称，两兄弟最近终于在一件事上达成了一致：先打投手。"
+      }
+    }
+  ]
+}

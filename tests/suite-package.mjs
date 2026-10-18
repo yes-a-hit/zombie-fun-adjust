@@ -15,8 +15,8 @@ export function runPackage({ pkgRoot }) {
   // ── 清单 ──
   const packJson = JSON.parse(readFileSync(at('pack.json'), 'utf8'))
   ok(packJson.uuid === 'yg.zombie-fun-adjust', 'uuid 正确', packJson.uuid)
-  ok(packJson.version === '1.3.0', 'version = 1.3.0', packJson.version)
-  ok(/（17 条）/.test(packJson.description), '描述标注为 17 条')
+  ok(packJson.version === '1.4.0', 'version = 1.4.0', packJson.version)
+  ok(/（22 条）/.test(packJson.description), '描述标注为 22 条')
   ok(!/国王可被拦截|运兵艇|墓碑/.test(packJson.description),
     '描述里不含已撤销 / 做不到的功能（国王拦截、运兵艇、巨人墓碑）',
     packJson.description.slice(0, 40))
@@ -71,7 +71,7 @@ export function runPackage({ pkgRoot }) {
 
   // ── 文档口径 ──
   const readme = readFileSync(at('README.md'), 'utf8')
-  ok(readme.includes('17 条'), 'README 改动一览标注为 17 条')
+  ok(readme.includes('22 条'), 'README 改动一览标注为 22 条')
   ok(!/国王可被拦截|运兵艇|巨人墓碑/.test(readme),
     'README 描述里不含已撤销 / 做不到的功能')
   ok(readme.includes('国王'), 'README 含国王相关条目')
@@ -98,7 +98,7 @@ export function runPackage({ pkgRoot }) {
   ok(zNames.kongfu_boss_chi && zNames.kongfu_boss_chi.zh === '张角', '气功教主 → 张角', JSON.stringify(zNames.kongfu_boss_chi))
 
   const al = JSON.parse(readFileSync(at('jsons/objects/ZombieAlmanac.json'), 'utf8'))
-  ok(al.objects.length === 33, '图鉴补丁 33 条（18 条重写 + 15 条小鬼独立条目）', String(al.objects.length))
+  ok(al.objects.length === 43, '图鉴补丁 43 条（1.3.0 的 33 条 + 1.4.0 的 10 条）', String(al.objects.length))
   const aliasSeen = new Set()
   let dup = null
   for (const o of al.objects) {
@@ -127,4 +127,25 @@ export function runPackage({ pkgRoot }) {
   ok(!/火药魔头|持刀大侠|气功教主/.test(narAll), '剧情里不再出现旧名')
   ok(/万户/.test(narAll) && /李逵/.test(narAll) && /张角/.test(narAll), '剧情已换用新名')
   ok(/苍天已死，黄天当立/.test(narAll), '张角出场剧情含「苍天已死，黄天当立」')
+
+  // ── 1.4.0：四组新特性的结构断言 ──
+  const feat2 = JSON.parse(readFileSync(at('jsons/features/ZombieFeatures.json'), 'utf8'))
+  const nameMap = Object.fromEntries((feat2.ZOMBIES || []).map((z) => [z.CODENAME, z.NAME]))
+  ok(nameMap.lostcity_crystalskull && nameMap.lostcity_crystalskull.zh === '老爹'
+    && nameMap.lostcity_crystalskull.en === 'Uncle', '青骷髅头 → 老爹 / Uncle',
+    JSON.stringify(nameMap.lostcity_crystalskull))
+
+  const al2 = JSON.parse(readFileSync(at('jsons/objects/ZombieAlmanac.json'), 'utf8'))
+  const byCn2 = Object.fromEntries(al2.objects.map((o) => [o.aliases[0], o.objdata]))
+  ok(/诺克萨斯|处决/.test(JSON.stringify(byCn2.dark_gargantuar)), '黑暗巨尸图鉴写了「诺克萨斯断头台」梗')
+  ok(/哎呀呀|还有一件事|魔法/.test(JSON.stringify(byCn2.lostcity_crystalskull)), '老爹图鉴写了他的口头禅')
+  ok(/空军/.test(JSON.stringify(byCn2.beach_fisherman)), '渔夫图鉴带「空军」类描述')
+  for (const cn of ['future_gargantuar', 'catapult', 'zomboni', 'sky_twin']) {
+    ok(/4|四|爆头/.test(JSON.stringify((byCn2[cn] || {}).Special)) && byCn2[cn] && byCn2[cn].Chat,
+      `${cn} 图鉴写了 4 倍 / 爆头`)
+  }
+  for (const cn of ['newspaper', 'newspaper_veteran', 'camel_onehump']) {
+    ok(byCn2[cn] && /地刺|电|投掷/.test(JSON.stringify(byCn2[cn].Special)), `${cn} 图鉴写了二类防具`)
+  }
 }
+

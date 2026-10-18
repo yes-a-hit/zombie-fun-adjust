@@ -1,0 +1,83 @@
+{
+  "zombies": [
+    {
+      "codename": "dark_gargantuar",
+      "intro": {
+        "en": "Immense zombie who brings the hammer down. Every kill — a plant, a zombie, or the Imp Monk he threw a moment ago — restores 900 health on the spot, after which he brings the hammer down again.",
+        "zh": "巨尸总能一锤定音。这一次他每砸死一个东西——植物、僵尸，甚至自己刚扔出去的那只僧侣小鬼——都会当场回复 900 点血，然后接着砸下一个。"
+      },
+      "special": [
+        {
+          "name": { "en": "Damage", "zh": "攻击" },
+          "desc": {
+            "en": "crushes plants with hammer",
+            "zh": "用石锤摧毁植物"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "launches Imp Monk when damaged",
+            "zh": "受重伤时丢出僧侣小鬼"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "restores 900 health for every unit killed, plants and zombies alike, including the Imp Monk he threw himself",
+            "zh": "每击杀一个单位回复 900 点血，植物和僵尸都算，包括他自己扔出去的僧侣小鬼"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "calls the swing an \"execution\", and holds that one execution should be followed immediately by another. Nobody has corrected him",
+            "zh": "他把这一锤叫作「处决」，并坚持认为处决完一个就该能立刻处决下一个。目前没有人在他面前纠正这件事"
+          }
+        }
+      ],
+      "chat": {
+        "en": "Dark Ages Gargantuar does not much care what the hammer lands on. A plant counts. A zombie counts. The Imp Monk he threw a moment ago counts, and is by far the easiest to reach. Every kill closes 900 health worth of him back up, which is more than the plant was worth and rather more than he strictly needs. He calls the swing an execution, and maintains that an execution should be followed immediately by another one. Nobody has corrected him. He still shops only at Enormous & Towering.",
+        "zh": "黑暗巨尸不太在乎锤子落在谁身上。植物也好，僵尸也好，他自己刚扔出去的那只僧侣小鬼也好——砸死哪个都算数，伤口就合上一截。他管这一锤叫「处决」，并且坚持认为处决完一个就该立刻处决下一个。目前没有人在他面前纠正这件事。有人替他算过账：一株向日葵五十阳光，他砸完回的血够买十八株。他说这叫效率。他仍然只去「巨大与高耸」买裤子。"
+      }
+    },
+    {
+      "codename": "lostcity_crystalskull",
+      "name": {
+        "en": "Uncle",
+        "zh": "老爹"
+      },
+      "intro": {
+        "en": "Uses a skull to steal sun, stores it, then fires it back as a lethal beam. He has his reasons: no sun, no magic. As for when he intends to give it back, he asks you to wait a moment — there is one more thing.",
+        "zh": "用骷髅头偷走阳光蓄能，再发射一道致命的激光。他偷阳光有自己的道理：没有阳光就没有魔法。至于什么时候还——他让你先别走，他说还有一件事。"
+      },
+      "special": [
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "tries to steal sun",
+            "zh": "会尝试偷走阳光"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "stolen sun is never returned",
+            "zh": "偷走的阳光不会再返还"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "renamed Uncle: the old gentleman from the antiques shop, who believes in exactly two things, magic and tea. He takes your sun because magic is the only thing that beats magic",
+            "zh": "改名为「老爹」：失落之城古董店的老先生，一生只信两件事——魔法，和茶。他拿走你的阳光，因为魔法只能用魔法打败"
+          }
+        }
+      ],
+      "chat": {
+        "en": "Uncle keeps a shop on the corner of the Lost City. He sells antiques. He also sells tea, although nobody has ever managed to leave before finishing it. He says \"aiyah\" before every remark and \"one more thing\" after every remark, and the second one tends to arrive when your hand is already on the doorknob. He does not steal sun for money — the shop does fine. He steals it for fuel, and when the fuel runs low he sighs, says \"aiyah\", and takes it anyway. Staff confirm the tea is excellent. Staff also confirm that nobody has ever reached the door.",
+        "zh": "老爹的店开在失落之城的拐角，卖古董，也卖茶。他说话前先「哎呀呀」一声，说完再补一句「还有一件事」——这一句通常出现在你已经走到门口、手放在门把上的时候。他偷阳光不是为了钱，古董店开着，钱他有；他要的是燃料。燃料不够的时候，他先叹一句「哎呀呀」，然后照拿不误。据工作人员称，他泡的茶确实好喝，但没人敢在他倒茶的时候离席。"
+      }
+    }
+  ]
+}

@@ -4,6 +4,25 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.0] - 2026-10-18
+
+### 新增
+
+- **黑暗巨尸：击杀任何单位回 900 血**。包 `GargantuarZombie.prototype._smash`（巨人唯一伤害出口）做前后存活快照；
+  植物、僵尸、自己扔出的僧侣小鬼都算。图鉴按「诺克萨斯断头台」重写。
+- **投手爆头 ×4**：`future_gargantuar` / `catapult` / `zomboni` / `sky_twin`（含 upper/lower）被投手类植物砸中伤害 ×4。
+  实现包 `CabbagePultPlant.prototype._lobToZombie`，命中匹配后 `setDamage(damage*4)` + splash ×4。
+- **二类防具**：`newspaper` / `newspaper_veteran` / `camel_*` 的地刺、电击、投掷伤害绕过纸层直击本体。
+  电击走 `dealDamage` 里关 `armorProtection`；地刺包 `PrjFunctions.stabOnZombie`；投掷命中时清零 `paperHealth`。
+- **渔夫僵尸抽奖**：10% 自己前进一格 / 20% 自扣 100 / 20% 无反应 / 50% 照旧拉植物。
+- **青骷髅头改名「老爹（Uncle）」** + 图鉴按《成龙历险记》老爹梗重写。
+- 图鉴新增 10 条（现共 43 条），全部由 WorkBuddy 按统一 brief 产出。
+
+### 说明
+
+- 已证伪的前提：巨人 `throwImp` 全程不发伤害，扔小鬼**不会**杀僵尸 —— 击杀只可能来自那一锤。
+- 投手弹在数据层没有投掷标记，僵尸侧无法辨来源，所以 4 倍只能从投手侧改。
+- 「冰车」按造冰车僵尸（`zomboni`）实现；若要改成雪橇队（`bobsled`），改 `HEADSHOT_TARGETS` 一行即可。
 ## [1.3.0] - 2026-10-18
 
 ### 新增

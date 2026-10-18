@@ -39,7 +39,48 @@ const CFG = {
   kingStageHpSword: 300, // 10. 剑国王（dark_king_veteran）出场期间的临时血量
   kingKnightSelfHit: 150, // 11. 国王每授爵一次自扣（需求指定 150）
   selfKillDamage: 999999, // 「自杀」用的致死伤害
+
+  /* ── 1.4.0 ── */
+  gargKillHeal: 900, // 黑暗巨尸：每击杀一个单位回复的血量（需求指定 900）
+  lobberHeadshotMult: 4, // 投手砸中被点名僵尸时的伤害倍率（需求指定 4 倍）
+  fisherForwardChance: 0.1, // 渔夫：10% 把自己往前拽一格
+  fisherSelfHitChance: 0.2, // 渔夫：20% 用力过猛自扣 100
+  fisherNothingChance: 0.2, // 渔夫：20% 完全没反应
+  fisherSelfHitDamage: 100, // 渔夫自扣数值
+  fisherForwardSquares: 1, // 往前拽几格
 }
+
+/**
+ * 投手「爆头 4 倍」的目标 —— 被砸中头部就当场报废的那几只。
+ * 「冰车」按造冰车僵尸（zomboni）实现；若日后要换成雪橇队，把它加进名单即可。
+ */
+const HEADSHOT_TARGETS = [
+  'future_gargantuar', // 巨尸统领者
+  'catapult', // 投石车僵尸
+  'zomboni', // 造冰车僵尸
+  'sky_twin', // 双舱飞行僵尸（本体）
+  'sky_twin_upper', // 双舱（上）
+  'sky_twin_lower', // 双舱（下）
+  'sky_airraid_twin', // 空袭双舱
+]
+
+/**
+ * 二类防具（纸制品）—— 报纸 / 杂志 / 骆驼牌。
+ * 引擎里它们不是 armors 数组，而是类内 `paperHealth`（骆驼牌则根本没有甲层）。
+ * 所以「二类」= 地刺、电击、投掷这三类伤害不吃纸，直接打本体。
+ */
+const PAPER_TARGETS = [
+  'modern_newspaper',
+  'newspaper',
+  'beepaper',
+  'newspaper_veteran', // 周刊 / 周日版
+  'camel_segment',
+  'camel_onehump',
+  'camel_twohump',
+  'camel_threehump',
+  'camel_manyhump',
+]
+
 
 /** 像素僵尸的 ID —— 取自 Zombies.ts 的 ZombieEnum（eighties_8bit = 334） */
 /**
@@ -153,17 +194,31 @@ const TARGETS = [
   // ── 10. 国王拦截：1.2.5 按指示移除（做了多版都拦不住，不再尝试）──
   // ── 2. 巨人死后留下对应世界的墓碑/障碍物 ──
   // 挂巨人基类，21 个巨人都继承它；是否留下、留什么由 codename 查表决定。
+  // ── 1.4.0 新增四条 ──
+  // 1) 黑暗巨尸：_smash 是巨人**唯一**的伤害出口（植物/僵尸/墓碑/粘液都从这里分派），
+  //    而 onSmashing 砸空也会触发、拿不到实际目标。所以包 _smash 做「前后存活快照」。
+  //    注意 throwImp 全程不发 dealDamage，扔小鬼不会杀僵尸 —— 击杀只可能来自这一锤。
+  { key: 'gargHeal', label: '黑暗巨尸·击杀回血900', names: ['DarkGargantuarZombie'], module: 'chunks:///_virtual/DarkGargantuarZombie.ts', methods: ['_smash'], mode: 'gargHeal' },
+  // 2) 投手 4 倍：投手 = CabbagePultPlant 基类（MelonPult/KernelPult/PepperPult 都继承它）。
+  //    _lobToZombie 返回 Promise<prj>，原函数本就用 setDamage 改弹体伤害，照同一手法乘 4。
+  { key: 'lobHeadshot', label: '投手·命中指定僵尸4倍伤害', names: ['CabbagePultPlant'], module: 'chunks:///_virtual/CabbagePultPlant.ts', methods: ['_lobToZombie'], mode: 'lobHeadshot' },
+  // 3) 二类防具·电击：报纸的护甲层在 dealDamage 里，只有 armorProtection=true 才吃纸。
+  //    电击 damageType = electricity(2)，据此把 armorProtection 关掉即可直击本体。
+  { key: 'paperBypass', label: '二类防具·电击绕过纸', names: ['ModernNewspaperZombie', 'ModernNewspaperVeteranZombie'], module: 'chunks:///_virtual/ModernNewspaperZombie.ts', methods: ['dealDamage'], mode: 'paperBypass' },
+  // 4) 渔夫：拉植物入口是 hookCall(plant, zombie, tomb) —— 返回要拉多久。
+  //    空调用（目标离开草坪 / 停用）也会进来，必须排除，否则会误掷骰。
+  { key: 'fisherGamble', label: '渔夫·拉植物改成抽奖', names: ['BeachFisherHook', 'BeachFisherZombieHook'], module: 'chunks:///_virtual/BeachFisherZombie.ts', methods: ['hookCall'], mode: 'fisherGamble' },
 ]
 
 /* ────────────────────── 基础设施 ────────────────────── */
 const diagLines = []
 const notedOnce = new Set()
 const resolved = new Map()
-const stats = { jamReduced: 0, aoesMuted: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, kingExposed: 0, kingLanded: 0, kingKnights: 0, dropshipsExposed: 0, kingGuards: 0, kingIntercepts: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0 }
+const stats = { jamReduced: 0, aoesMuted: 0, empDrops: 0, pixelTicks: 0, iceImmune: 0, kingExposed: 0, kingLanded: 0, kingKnights: 0, dropshipsExposed: 0, kingGuards: 0, kingIntercepts: 0, arcadeSummons: 0, spikeKills: 0, kicks: 0, selfHits: 0, mcSuicides: 0, rotateTicks: 0, gargHeals: 0, gargHealHp: 0, lobHeadshots: 0, paperBypasses: 0, fisherRolls: 0, fisherForward: 0, fisherSelfHits: 0, fisherIdle: 0 }
 
 let activeCtx = null
 
-const REFS = { cc: null, Vec2: null, Rectangle: null, Square: null, ZombieDamageDetails: null, ZombieDamageType: null }
+const REFS = { cc: null, Vec2: null, Rectangle: null, Square: null, ZombieDamageDetails: null, ZombieDamageType: null, PrjFunctions: null }
 
 const SQUARE_W_FALLBACK = 68
 const SQUARE_H_FALLBACK = 80.77
@@ -258,11 +313,14 @@ function resolveEngineRefs(engine, ctx) {
   REFS.ZombieDamageDetails = moduleExport(engine, 'chunks:///_virtual/CharacterManager.ts', 'ZombieDamageDetails')
   REFS.ZombieDamageType = moduleValue(engine, 'chunks:///_virtual/CharacterManager.ts', 'ZombieDamageType')
   REFS.Square = moduleExport(engine, 'chunks:///_virtual/Square.ts', 'Square')
+  // 地刺伤害入口（PrjFunctions.stabOnZombie）——是个工具对象而不是类，必须在这里取
+  REFS.PrjFunctions = moduleValue(engine, 'chunks:///_virtual/Projectiles.ts', 'PrjFunctions')
   const line =
     '依赖：Rectangle=' + (REFS.Rectangle ? 'ok' : '缺') +
     ' ZombieDamageDetails=' + (REFS.ZombieDamageDetails ? 'ok' : '缺') +
     ' ZombieDamageType=' + (REFS.ZombieDamageType ? 'ok' : '缺') +
     ' Square=' + (REFS.Square ? 'ok' : '缺') +
+    ' PrjFunctions=' + (REFS.PrjFunctions ? 'ok' : '缺') +
     ' Vec2=' + (REFS.Vec2 ? 'ok' : '缺')
   note(line)
   try {
@@ -987,6 +1045,266 @@ function handlerRotate(entry, thisArg, args, callNext) {
   return ret
 }
 
+/* ────────────────────── 1.4.0：四条新特性 ────────────────────── */
+
+/** codename 是否在名单里（小写比较，容忍 null / 非僵尸对象） */
+function codenameInList(z, list) {
+  const cn = zombieCodename(z)
+  if (!cn) return false
+  return list.indexOf(String(cn).toLowerCase()) >= 0
+}
+
+/** 取本行所有植物与僵尸的引用集合（_smash 前后各取一次） */
+function poolSnapshot(z) {
+  const set = new Set()
+  try {
+    const lane = z && z.inLane
+    if (!lane) return null
+    const plants = typeof lane.plantPool === 'function' ? lane.plantPool() : null
+    const zombies = typeof lane.zombiePool === 'function' ? lane.zombiePool() : null
+    if (Array.isArray(plants)) for (const p of plants) set.add(p)
+    if (Array.isArray(zombies)) for (const q of zombies) set.add(q)
+  } catch (err) {
+    return null
+  }
+  return set
+}
+
+/** 直接加血（不走伤害管线，避免负伤害被各种减伤/免疫判定吃掉） */
+function healZombie(z, amount) {
+  try {
+    const cur = typeof z.health === 'number' ? z.health : null
+    if (cur == null) return 0
+    const max = typeof z.toughness === 'number' ? z.toughness : null
+    const next = max == null ? cur + amount : Math.min(max, cur + amount)
+    const gained = Math.max(0, next - cur)
+    z.health = next
+    try {
+      if (typeof z.setDisplay === 'function') z.setDisplay()
+      else if (typeof z.updateHealthBar === 'function') z.updateHealthBar()
+    } catch (e) {}
+    if (gained > 0) {
+      stats.gargHeals += 1
+      stats.gargHealHp += gained
+    }
+    return gained
+  } catch (err) {
+    noteOnce('heal', '回血失败：' + errText(err))
+    return 0
+  }
+}
+
+/**
+ * 1. 黑暗巨尸：击杀任何单位回 900 血。
+ *
+ * `_smash` 一次只处理 1 植物 + 1 僵尸（墓碑与粘液也是这里分派），
+ * 所以「调用前后从池子里消失的对象」就是本次击杀 —— O(1) 判定，不必扫全场。
+ * 被魅惑时植物分支会被跳过、只砸僵尸，与「植物或僵尸都算」天然一致。
+ */
+function handlerGargHeal(entry, thisArg, args, callNext) {
+  const before = poolSnapshot(thisArg)
+  const r = callNext(...args)
+  try {
+    if (!before || !codenameInList(thisArg, ['dark_gargantuar'])) return r
+    const after = poolSnapshot(thisArg)
+    if (!after) return r
+    let kills = 0
+    for (const o of before) if (!after.has(o)) kills += 1
+    if (kills > 0) healZombie(thisArg, kills * CFG.gargKillHeal)
+  } catch (err) {
+    noteOnce('gargHeal', '黑暗巨尸回血判定失败：' + errText(err))
+  }
+  return r
+}
+
+/** 改弹体伤害（原函数本就用 setDamage 改，照同一手法） */
+function scaleProjectile(prj, mul) {
+  try {
+    const dmg = typeof prj.damage === 'number' ? prj.damage : null
+    if (dmg != null) {
+      if (typeof prj.setDamage === 'function') prj.setDamage(dmg * mul)
+      else prj.damage = dmg * mul
+    }
+  } catch (err) {}
+  try {
+    if (Array.isArray(prj.splashDamages)) {
+      prj.splashDamages = prj.splashDamages.map((v) => (typeof v === 'number' ? v * mul : v))
+    }
+  } catch (err) {}
+}
+
+/** 把纸制防具当场清零 —— 之后的伤害自然打到本体 */
+function zeroPaper(z) {
+  try {
+    let touched = false
+    if (typeof z._paperHealth === 'number' && z._paperHealth > 0) {
+      z._paperHealth = 0
+      touched = true
+    }
+    if (typeof z.paperHealth === 'number' && z.paperHealth > 0) {
+      z.paperHealth = 0
+      touched = true
+    }
+    if (touched) {
+      stats.paperBypasses += 1
+      try {
+        if (typeof z.playPaperDestroy === 'function') z.playPaperDestroy()
+      } catch (e) {}
+    }
+    return touched
+  } catch (err) {
+    return false
+  }
+}
+
+/**
+ * 2. 投手砸中被点名僵尸 → 伤害 ×4（模拟被投手直接爆头）。
+ * 顺手处理二类防具的「投掷」那一条：纸制品被投掷物砸中，纸当场报废。
+ */
+function handlerLobHeadshot(entry, thisArg, args, callNext) {
+  const p = callNext(...args)
+  if (!p || typeof p.then !== 'function') return p
+  return p.then((prj) => {
+    try {
+      const target = args[0] || (prj && prj.targetLocked)
+      if (prj && codenameInList(target, HEADSHOT_TARGETS)) {
+        scaleProjectile(prj, CFG.lobberHeadshotMult)
+        stats.lobHeadshots += 1
+      }
+      if (codenameInList(target, PAPER_TARGETS)) zeroPaper(target)
+    } catch (err) {
+      noteOnce('lobHead', '投手爆头判定失败：' + errText(err))
+    }
+    return prj
+  })
+}
+
+/** 电击的 damageType 枚举值（拿不到引擎枚举时按引擎里的 electricity = 2） */
+function electricityType() {
+  try {
+    const T = REFS.ZombieDamageType
+    if (T && typeof T.electricity === 'number') return T.electricity
+  } catch (err) {}
+  return 2
+}
+
+/** 关掉「由护甲挡」的标记：伤害直接进本体 */
+function withoutArmorProtection(details) {
+  try {
+    if (!details) return details
+    if (typeof details.replaceArmorProtction === 'function') return details.replaceArmorProtction(false)
+    if (typeof details.replaceArmorProtection === 'function') return details.replaceArmorProtection(false)
+    details.armorProtection = false
+  } catch (err) {}
+  return details
+}
+
+/** 3. 二类防具·电击：报纸护甲层只吃 armorProtection=true 的伤害 */
+function handlerPaperBypass(entry, thisArg, args, callNext) {
+  try {
+    if (codenameInList(thisArg, PAPER_TARGETS)) {
+      const d = args[0]
+      if (d && d.damageType === electricityType()) {
+        args[0] = withoutArmorProtection(d)
+        stats.paperBypasses += 1
+      }
+    }
+  } catch (err) {
+    noteOnce('paperElec', '二类防具（电击）判定失败：' + errText(err))
+  }
+  return callNext(...args)
+}
+
+/** 3'. 二类防具·地刺：PrjFunctions.stabOnZombie 的 details 默认 armorProtection=true */
+function installSpikeBypass(ctx) {
+  const hooks = ctx && ctx.unsafe && ctx.unsafe.hooks
+  const pf = REFS.PrjFunctions
+  if (!hooks || typeof hooks.wrapMethod !== 'function') return 0
+  if (!pf || typeof pf.stabOnZombie !== 'function') {
+    note('地刺入口不可用（PrjFunctions.stabOnZombie 缺失），二类防具只生效电击与投掷两条')
+    return 0
+  }
+  try {
+    hooks.wrapMethod({
+      target: pf,
+      methodName: 'stabOnZombie',
+      handler: ({ args, callNext }) => {
+        try {
+          const z = args[0]
+          if (codenameInList(z, PAPER_TARGETS)) {
+            for (let i = 0; i < args.length; i++) {
+              const a = args[i]
+              if (a && typeof a === 'object' && 'armorProtection' in a) {
+                args[i] = withoutArmorProtection(a)
+                stats.paperBypasses += 1
+                break
+              }
+            }
+          }
+        } catch (err) {
+          noteOnce('spikeBypass', '二类防具（地刺）判定失败：' + errText(err))
+        }
+        return callNext(...args)
+      },
+    })
+    note('地刺入口已挂载（PrjFunctions.stabOnZombie）')
+    return 1
+  } catch (err) {
+    note('地刺挂载失败：' + errText(err))
+    return 0
+  }
+}
+
+/** 把僵尸整体往前拽一格（世界坐标 setter，引擎每帧 judgeInLnC 会重算格子） */
+function moveSelfForward(z, squares) {
+  try {
+    const { w } = squareSize()
+    const dir = z.reversed ? 1 : -1 // 僵尸从右往左走，前进 = x 减小
+    const delta = dir * w * squares
+    if (typeof z.worldPositionX === 'number') z.worldPositionX += delta
+    else if (z.worldPosition && typeof z.worldPosition.x === 'number') z.worldPosition.x += delta
+    return true
+  } catch (err) {
+    noteOnce('fisherMove', '渔夫前进失败：' + errText(err))
+    return false
+  }
+}
+
+/**
+ * 4. 渔夫僵尸：拉植物改成抽奖。
+ *   10% 把自己往前拽一格 / 20% 用力过猛自扣 100 / 20% 完全没反应 / 其余照常拉植物。
+ * 空调用（args[0] 为空 = 目标离开草坪或 specialOnDisable）不掷骰。
+ */
+function handlerFisherGamble(entry, thisArg, args, callNext) {
+  const plant = args[0]
+  if (!plant) return callNext(...args)
+  const owner = (thisArg && thisArg.owner) || null
+  if (!owner) return callNext(...args)
+
+  stats.fisherRolls += 1
+  let roll = Math.random()
+
+  if (roll < CFG.fisherForwardChance) {
+    moveSelfForward(owner, CFG.fisherForwardSquares)
+    stats.fisherForward += 1
+    return 0
+  }
+  roll -= CFG.fisherForwardChance
+
+  if (roll < CFG.fisherSelfHitChance) {
+    selfHit(owner, CFG.fisherSelfHitDamage)
+    stats.fisherSelfHits += 1
+    return 0
+  }
+  roll -= CFG.fisherSelfHitChance
+
+  if (roll < CFG.fisherNothingChance) {
+    stats.fisherIdle += 1
+    return 0
+  }
+  return callNext(...args)
+}
+
 function makeHandler(entry) {
   return function ({ thisArg, args, callNext }) {
     try {
@@ -1019,6 +1337,14 @@ function makeHandler(entry) {
           return makeSelfHitAfter(entry)(thisArg, args, callNext)
         case 'rotate':
           return handlerRotate(entry, thisArg, args, callNext)
+        case 'gargHeal':
+          return handlerGargHeal(entry, thisArg, args, callNext)
+        case 'lobHeadshot':
+          return handlerLobHeadshot(entry, thisArg, args, callNext)
+        case 'paperBypass':
+          return handlerPaperBypass(entry, thisArg, args, callNext)
+        case 'fisherGamble':
+          return handlerFisherGamble(entry, thisArg, args, callNext)
         default:
           return callNext(...args)
       }
@@ -1230,6 +1556,10 @@ export default {
       ctx.log.info(`[僵尸调整] 已挂载 ${hooked}/${TARGETS.length} 个僵尸类（共 ${methodTotal} 个方法入口）`)
       if (failed.length) note('未挂载：' + failed.join('、'))
 
+      // 1.4.0：地刺那条走 PrjFunctions（工具对象，不是类），单独挂
+      const spikeMounted = installSpikeBypass(ctx)
+      if (spikeMounted) methodTotal += 1
+
       if (hooked === 0) {
         dumpDiagnostics(ctx)
         ctx.ui.toast('僵尸调整：钩子全部挂载失败（详见日志）', 'error')
@@ -1290,6 +1620,18 @@ export const __test__ = {
   handlerRotate,
   makeSelfHitAfter,
   selfHit,
+  handlerGargHeal,
+  handlerLobHeadshot,
+  handlerPaperBypass,
+  handlerFisherGamble,
+  installSpikeBypass,
+  healZombie,
+  scaleProjectile,
+  zeroPaper,
+  codenameInList,
+  moveSelfForward,
+  HEADSHOT_TARGETS,
+  PAPER_TARGETS,
   setRefs(refs) { Object.assign(REFS, refs || {}) },
   getRefs() { return REFS },
   getDiag() { return diagLines.slice() },

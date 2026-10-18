@@ -1,0 +1,85 @@
+{
+  "zombies": [
+    {
+      "codename": "newspaper",
+      "intro": {
+        "en": "The newspaper protects zombie, who is then enraged when it is destroyed. The newspaper is class-two armor, though: spikes, electric shocks and anything lobbed ignore it and land on the zombie himself.",
+        "zh": "受到报纸保护的僵尸，当报纸被毁坏时将会发飙。不过那层报纸只算二类防具：地刺、电击和飞过来的抛投物都不吃这一套，直接打到本体。"
+      },
+      "special": [
+        {
+          "name": { "en": "Special", "zh": "特殊" },
+          "desc": {
+            "en": "becomes a flighty zombie once the newspaper is destroyed",
+            "zh": "一旦报纸被毁，将会发了疯似的向前冲去"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "the newspaper is class-two armor: spikes, electric shocks and lobbed projectiles are no longer blocked by it and hit the zombie directly",
+            "zh": "报纸属于二类防具：地刺、电击、抛投物不再被它挡下，直接伤到本体"
+          }
+        }
+      ],
+      "chat": {
+        "en": "The newspaper considers itself a serious piece of armor. It has stopped peas. It has stopped basketballs. It has stopped an entire lane's worth of patience, and spread wide it does look like a wall. What it cannot stop is anything pointy, anything electric, or anything arriving from above. Spikes come up through it, current slips between the pages, and a cabbage lands on the reader. None of the three read the paper. He still has not finished the crossword. 23 down is \"Brains\".",
+        "zh": "报纸一直觉得自己是件正经防具。它挡过豌豆，挡过篮球，挡过一整条车道的耐心，摊开的时候确实像一堵墙。问题是它挡不住三样东西：尖的、带电的、从天上飞过来的。地刺从下面扎，电从缝里走，卷心菜从上面落——三种都不看版面，直接找本体。他本人对此的解释是，那三样东西不读报。填字游戏他还没做完，23 列是「Brains」。"
+      }
+    },
+    {
+      "codename": "newspaper_veteran",
+      "intro": {
+        "en": "The heavy magazine protects zombie, who is then enraged when it is destroyed. Thick is not the same as sealed: it is still class-two armor, and spikes, shocks and lobbed projectiles go straight through it to the zombie.",
+        "zh": "受到厚重杂志保护的僵尸，当杂志被毁坏时将会发飙。厚归厚，它仍然是二类防具：地刺、电击和抛投物直接从杂志上穿过去，伤到里面的人。"
+      },
+      "special": [
+        {
+          "name": { "en": "Special", "zh": "特殊" },
+          "desc": {
+            "en": "becomes a flighty zombie once the magazine is destroyed",
+            "zh": "一旦杂志被毁，将会发了疯似的向前冲去"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "the magazine is class-two armor: spikes, electric shocks and lobbed projectiles are no longer blocked by it and hit the zombie directly",
+            "zh": "杂志属于二类防具：地刺、电击、抛投物不再被它挡下，直接伤到本体"
+          }
+        }
+      ],
+      "chat": {
+        "en": "Sunday Edition Zombie carries a magazine three times thicker than anyone else's newspaper: more ads, heavier stock, and the general heft of a brick. He believed thickness was defense, right up until a spike came up through it, current walked between the coated pages, and a cabbage landed on his head. Paper stops words. It does not stop pointy, electric, or airborne. He notes that the thickest page in the issue is a real-estate advertisement, and that it did not stop anything either. He has not finished the comics.",
+        "zh": "周刊僵尸手里的杂志比别人的报纸厚三倍，广告多，纸张克重高，拿在手里像一块砖。他一直认为厚度就是防御力，直到地刺从下面穿上来、电流从铜版纸之间走过去、一颗卷心菜从上面砸中他的头。纸能挡字，挡不住尖的、带电的和飞过来的。据他本人称，这本杂志最厚的一页是房地产广告，那一页也没挡住任何东西。他还没看完漫画。"
+      }
+    },
+    {
+      "codename": "camel_onehump",
+      "intro": {
+        "en": "Arrives in step with other Camel Zombies. The placard they hold up counts only as class-two armor: spikes, shocks and anything airborne pass it and land on the zombie carrying it.",
+        "zh": "随着其他的骆驼牌僵尸组队入场。他们举着的那块牌子只算二类防具：地刺、电击和飞过来的东西都不被它挡下，直接伤到举牌的人。"
+      },
+      "special": [
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "arrives in a group of three zombies or more",
+            "zh": "每组三名或以上同时到来"
+          }
+        },
+        {
+          "name": { "en": "Special", "zh": "特点" },
+          "desc": {
+            "en": "the camel placard is class-two armor: spikes, electric shocks and lobbed projectiles are no longer blocked by it and hit the zombie directly",
+            "zh": "骆驼牌属于二类防具：地刺、电击、抛投物不再被它挡下，直接伤到本体"
+          }
+        }
+      ],
+      "chat": {
+        "en": "Every Camel Zombie is an excellent ballroom dancer, rehearsing daily by holding up a placard covered in mysterious symbols. They call it the Camel Dance. The placard has a proud opinion of itself: it has stopped peas, it has blocked a whole row's line of sight, and raised overhead it does look like a shield. It is, however, cardboard. Spikes come up through it, current goes around the edge, and whatever is thrown arrives from above. The troupe reports that the formation has never once broken. What breaks is the arm holding the sign. Next performance: the Camel Dance.",
+        "zh": "每名骆驼牌僵尸都是舞厅里出色的舞者，每天举着那块印着神秘图案的牌子排练，他们管这叫「骆驼舞」。那块牌子自尊心很强：它挡过豌豆，挡过一整排植物的视线，举起来的时候确实像一面盾。可惜它只是一块纸板，尖的从下面穿，电从边上绕，飞过来的东西从上面落。据舞团称，队形从来没乱过，乱的是举牌的手。他们下一场演出的曲目还是骆驼舞。"
+      }
+    }
+  ]
+}
